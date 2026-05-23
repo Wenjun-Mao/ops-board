@@ -1,5 +1,6 @@
 param(
-    [string]$Stack = "signoz"
+    [string]$Stack = "signoz",
+    [switch]$RemoveOrphans
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,5 +13,10 @@ if (-not (Test-Path $composeFile)) {
 }
 
 docker compose -p $Stack -f $composeFile pull
-docker compose -p $Stack -f $composeFile up -d --remove-orphans
+$upArgs = @("compose", "-p", $Stack, "-f", $composeFile, "up", "-d")
+if ($RemoveOrphans) {
+    $upArgs += "--remove-orphans"
+}
+
+docker @upArgs
 docker compose -p $Stack -f $composeFile ps
