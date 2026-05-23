@@ -9,17 +9,17 @@ Access model
 - Same-host Docker containers: `http://host.docker.internal:4318/v1/logs`
 - Same-host non-Docker processes: `http://localhost:4318/v1/logs`
 - LAN peers: `http://<signoz-host-ip>:4318/v1/logs`
-- Remote / VPS (via nginx + SSL): `https://<domain>/v1/logs`
+- Remote / VPS over Tailscale: `http://<tailscale-hostname>:4318/v1/logs`
 
 Published endpoints
 - UI: `0.0.0.0:8080`
 - OTLP gRPC: `0.0.0.0:4317`
 - OTLP HTTP: `0.0.0.0:4318`
-- Collector health check: `0.0.0.0:13133` (useful as nginx upstream probe)
+- Collector health check: `0.0.0.0:13133`
 
 Start SigNoz
 1) From this repo root:
-   - `docker compose -p signoz -f docker/compose.yaml up -d --remove-orphans`
+   - `docker compose -p signoz -f stacks/signoz/compose.yaml up -d --remove-orphans`
 2) Open UI:
    - `http://localhost:8080`
 3) Verify collector port is exposed:
