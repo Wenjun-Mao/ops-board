@@ -87,7 +87,7 @@ docker compose -p signoz -f docker/compose.yaml config --quiet
 docker compose -p signoz -f docker/compose.yaml config --images
 ```
 
-Expected images:
+Expected images include these entries; order may vary:
 
 ```text
 clickhouse/clickhouse-server:25.5.6
@@ -234,7 +234,7 @@ docker compose -p signoz -f stacks/signoz/compose.yaml config --quiet
 docker compose -p signoz -f stacks/signoz/compose.yaml config --images
 ```
 
-Expected images:
+Expected images include these entries; order may vary:
 
 ```text
 clickhouse/clickhouse-server:25.5.6
