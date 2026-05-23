@@ -2,7 +2,7 @@
 
 Date: 2026-05-23
 
-This repo is being renamed from `signoz-stack` to `ops-board`.
+This repo was renamed from `signoz-stack` to `ops-board`.
 
 The goal is to evolve it from a single SigNoz stack into a self-hosted operations board for monitoring and managing projects across local machines, VPSs, countries, and cloud providers.
 
@@ -14,26 +14,11 @@ The goal is to evolve it from a single SigNoz stack into a self-hosted operation
 - Initial working stack: SigNoz
 - Planned later stacks: Uptime Kuma, Homepage, Plane, optional Healthchecks
 
-## Important Before Recloning
-
-The current local working tree has uncommitted changes. Commit and push them before renaming/recloning, or the fresh clone will not include the upgraded SigNoz work or this handoff.
-
-Current remote:
+## Current Remote
 
 ```powershell
-origin https://github.com/Wenjun-Mao/signoz-stack.git
+origin https://github.com/Wenjun-Mao/ops-board.git
 ```
-
-Recommended sequence:
-
-```powershell
-git status
-git add README.md stacks/signoz/compose.yaml stacks/signoz/otel-collector-config.yaml stacks/signoz/common/signoz/otel-collector-opamp-config.yaml HANDOFF.md
-git commit -m "Update SigNoz stack and add ops-board handoff"
-git push
-```
-
-Then rename the GitHub repo from `signoz-stack` to `ops-board`, reclone it, and restart from this document.
 
 ## Current Local Runtime State
 
@@ -87,24 +72,19 @@ signoz/zookeeper:3.7.1
 
 Do not bump ClickHouse independently just because newer ClickHouse tags exist. The current upstream SigNoz Docker compose still pins ClickHouse `25.5.6`.
 
-## Current Uncommitted File Changes
+## Completed Restructure
 
-Files changed:
+The first ops-board restructure moved SigNoz under `stacks/signoz/` and added root conventions for Tailscale-first operation.
 
-- `README.md`
-- `stacks/signoz/compose.yaml`
-- `stacks/signoz/otel-collector-config.yaml`
-- `stacks/signoz/common/signoz/otel-collector-opamp-config.yaml`
-- `HANDOFF.md`
-
-Meaning of the changes:
+Meaningful changes:
 
 - Upgraded SigNoz from `v0.111.0` to `v0.125.1`
 - Upgraded SigNoz OTel collector from `v0.142.0` to `v0.144.4`
 - Replaced old separate schema migrator services with `signoz-telemetrystore-migrator`
 - Added OpAMP manager config at `stacks/signoz/common/signoz/otel-collector-opamp-config.yaml`
 - Added `metadataexporter` to the collector config
-- Documented current stack pins in `README.md`
+- Documented current stack pins in `stacks/signoz/README.md`
+- Added root `.env.example`, `.gitignore`, `access/tailscale.md`, and helper scripts under `scripts/`
 
 ## Target Repo Shape
 
@@ -171,23 +151,7 @@ Use Tailscale/MagicDNS as the private access layer:
 
 Later, a reverse proxy can be added under `access/` or `reverse-proxy/` if public TLS endpoints are needed.
 
-## Recommended Next Session Plan
-
-After recloning the renamed `ops-board` repo:
-
-1. Confirm the repo is clean and the remote points to `ops-board`.
-2. Move the current SigNoz stack into `stacks/signoz/`.
-3. Update paths inside `stacks/signoz/compose.yaml`.
-   - Current compose paths should be relative to `stacks/signoz/`.
-   - Bind mounts should use paths such as `./common/...`.
-4. Update commands in `README.md` and `docs/ONBOARDING.md`.
-5. Add root `.env.example`.
-6. Add root `.gitignore`.
-7. Add `access/tailscale.md`.
-8. Add script placeholders for `backup.ps1`, `restore.ps1`, `update-stack.ps1`, and `status.ps1`.
-9. Verify SigNoz still starts from the new path.
-
-Suggested verification after the move:
+## Verification Commands
 
 ```powershell
 docker compose -p signoz -f stacks/signoz/compose.yaml config --quiet
@@ -211,10 +175,10 @@ It also keeps a natural relationship with both monitoring boards and kanban boar
 
 ## Notes For The Next Codex Session
 
-Start with this prompt:
+Suggested prompt:
 
 ```text
-We renamed signoz-stack to ops-board and recloned it. Read HANDOFF.md first. Continue by restructuring the repo into the target ops-board layout, preserving the verified SigNoz stack behavior and using Tailscale as the first access layer. Do not add reverse proxy services yet.
+Read HANDOFF.md first. Continue evolving ops-board from the completed SigNoz/Tailscale baseline. The next likely stack is Uptime Kuma. Do not add reverse proxy services yet.
 ```
 
-Keep changes incremental. The first milestone is only to move SigNoz under `stacks/signoz/` and prove it still runs.
+Keep changes incremental. Add one stack at a time and verify it before expanding the board.

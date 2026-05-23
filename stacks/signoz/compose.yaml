@@ -82,6 +82,8 @@ services:
     !!merge <<: *common
     image: clickhouse/clickhouse-server:25.5.6
     container_name: signoz-init-clickhouse
+    environment:
+      - HISTOGRAM_QUANTILE_URL=${HISTOGRAM_QUANTILE_URL:-}
     command:
       - bash
       - -c
@@ -143,7 +145,7 @@ services:
     image: signoz/signoz:${VERSION:-v0.125.1}
     container_name: signoz
     ports:
-      - "0.0.0.0:8080:8080"   # UI - reachable from LAN / Tailscale
+      - "0.0.0.0:${SIGNOZ_HTTP_PORT:-8080}:8080"   # UI - reachable from LAN / Tailscale
     volumes:
       - sqlite:/var/lib/signoz/
     environment:
@@ -184,9 +186,9 @@ services:
       - SIGNOZ_OTEL_COLLECTOR_TIMEOUT=10m
     ports:
       # - "1777:1777"           # pprof extension
-      - "0.0.0.0:4317:4317"   # OTLP gRPC  — traces/metrics/logs
-      - "0.0.0.0:4318:4318"   # OTLP HTTP  — traces/metrics/logs
-      - "0.0.0.0:13133:13133" # collector health probe
+      - "0.0.0.0:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317"   # OTLP gRPC  — traces/metrics/logs
+      - "0.0.0.0:${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318"   # OTLP HTTP  — traces/metrics/logs
+      - "0.0.0.0:${SIGNOZ_COLLECTOR_HEALTH_PORT:-13133}:13133" # collector health probe
   signoz-telemetrystore-migrator:
     !!merge <<: *db-depend
     image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.144.4}

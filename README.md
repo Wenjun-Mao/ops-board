@@ -20,13 +20,13 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 ops-board/
   README.md
   HANDOFF.md
-  .env.example                  (planned)
-  .gitignore                    (planned)
+  .env.example
+  .gitignore
 
-  access/                       (planned)
+  access/
     tailscale.md
 
-  scripts/                      (planned)
+  scripts/
     backup.ps1
     restore.ps1
     status.ps1
@@ -42,6 +42,8 @@ ops-board/
 ```
 
 ## Quick Start
+
+Use `.env.example` as a reference for local settings. For stack-specific Compose variables, export them in your shell or copy the relevant values into that stack's `.env` file.
 
 Start SigNoz:
 
@@ -69,9 +71,27 @@ Tailscale is the private network boundary for now.
 - Keep stack ports bound explicitly for local and tailnet access.
 - Use Tailscale MagicDNS names in docs and future dashboards.
 
-The `access/tailscale.md` guide is planned for the next documentation pass.
+See `access/tailscale.md` for endpoint conventions.
 
 ## Stack Commands
+
+Show SigNoz status:
+
+```powershell
+.\scripts\status.ps1 -Stack signoz
+```
+
+Update SigNoz:
+
+```powershell
+.\scripts\update-stack.ps1 -Stack signoz
+```
+
+Remove orphaned containers during an update only when you intentionally want cleanup:
+
+```powershell
+.\scripts\update-stack.ps1 -Stack signoz -RemoveOrphans
+```
 
 Stop SigNoz while preserving volumes:
 
@@ -85,12 +105,16 @@ Reset SigNoz and wipe its named volumes:
 docker compose -p signoz -f stacks/signoz/compose.yaml down -v
 ```
 
-Planned helper scripts will later wrap common status, backup, restore, and update workflows under `scripts/`.
+Backup and restore scripts are placeholders until stack-specific backup jobs are defined:
+
+```powershell
+.\scripts\backup.ps1
+.\scripts\restore.ps1 -BackupPath <path>
+```
 
 ## Current Priorities
 
-1. Keep SigNoz running from `stacks/signoz/`.
-2. Document Tailscale access.
-3. Add Uptime Kuma.
-4. Add Homepage after monitored services have stable URLs.
-5. Add backup/update automation before adding Plane.
+1. Add Uptime Kuma.
+2. Add Homepage after monitored services have stable URLs.
+3. Define real backup/restore jobs before adding heavier stateful services.
+4. Add Plane after backup habits are in place.

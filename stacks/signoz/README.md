@@ -10,6 +10,8 @@ From the repo root:
 docker compose -p signoz -f stacks/signoz/compose.yaml up -d --remove-orphans
 ```
 
+Stack-specific Compose variables can be exported in your shell or placed in `stacks/signoz/.env`.
+
 Open UI:
 
 ```text
@@ -70,7 +72,7 @@ If the host cannot reach GitHub, pre-seed the ClickHouse init binary tarball loc
    - `docker logs signoz-init-clickhouse --tail 100`
    - `docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"`
 
-Optional: if you have an accessible mirror URL, set `HISTOGRAM_QUANTILE_URL` in `stacks/signoz/.env`.
+Optional: if you have an accessible mirror URL, set `HISTOGRAM_QUANTILE_URL` in `stacks/signoz/.env`. The compose file passes that value into `signoz-init-clickhouse`.
 
 ## Onboarding Projects
 
