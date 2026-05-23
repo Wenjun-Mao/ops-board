@@ -4,7 +4,7 @@
 # Deployment model: standalone, multi-project, multi-host
 #   • All published ports bind to 0.0.0.0 so the stack is reachable from
 #     the host itself (localhost), other containers, LAN peers, and
-#     reverse-proxied VPS clients via nginx/SSL.
+#     remote VPS clients over Tailscale; public reverse proxy is deferred.
 #   • Each project runs its own Vector (or OTLP) agent and ships logs
 #     to the collector endpoints below.
 #
@@ -142,7 +142,7 @@ services:
     image: signoz/signoz:${VERSION:-v0.125.1}
     container_name: signoz
     ports:
-      - "0.0.0.0:8080:8080"   # UI — reachable from LAN / nginx
+      - "0.0.0.0:8080:8080"   # UI - reachable from LAN / Tailscale
     volumes:
       - sqlite:/var/lib/signoz/
     environment:
@@ -185,7 +185,7 @@ services:
       # - "1777:1777"           # pprof extension
       - "0.0.0.0:4317:4317"   # OTLP gRPC  — traces/metrics/logs
       - "0.0.0.0:4318:4318"   # OTLP HTTP  — traces/metrics/logs
-      - "0.0.0.0:13133:13133" # health check — nginx upstream probe
+      - "0.0.0.0:13133:13133" # collector health probe
   signoz-telemetrystore-migrator:
     !!merge <<: *db-depend
     image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.144.4}
