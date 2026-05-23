@@ -36,10 +36,9 @@ Agents that emit telemetry should point at the Tailscale hostname.
 Vector example:
 
 ```dotenv
-VECTOR_OTLP_ENDPOINT=http://<tailscale-hostname>:4318
-VECTOR_LOGS_ENDPOINT=http://<tailscale-hostname>:4318/v1/logs
-VECTOR_TRACES_ENDPOINT=http://<tailscale-hostname>:4318/v1/traces
-VECTOR_METRICS_ENDPOINT=http://<tailscale-hostname>:4318/v1/metrics
+VECTOR_SIGNOZ_OTLP_HTTP_URI=http://<tailscale-hostname>:4318/v1/logs
+VECTOR_PROJECT_NAME=<project-name>
+VECTOR_DEPLOYMENT_ENV=prod
 ```
 
 ## Security Notes

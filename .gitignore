@@ -4,17 +4,17 @@
 !.env.example
 
 # Runtime data and bind-mounted service state
-data/
-**/data/
-**/runtime/
-**/outputs/
+/stacks/*/data/
+/stacks/*/runtime/
+/stacks/*/outputs/
 
 # Backups and archives
-backups/
+/backups/
+/backups/**/*.sql
 *.bak
 *.backup
 *.dump
-*.sql
+*.sql.dump
 *.tar
 *.tar.gz
 *.zip
