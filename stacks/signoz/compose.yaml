@@ -136,7 +136,8 @@ services:
       - ./common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ./common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse:/var/lib/clickhouse/
-      # - ../common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
+      # Optional user-created storage policy:
+      # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   signoz:
     !!merge <<: *db-depend
     image: signoz/signoz:${VERSION:-v0.125.1}

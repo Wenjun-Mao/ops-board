@@ -28,7 +28,7 @@ Recommended sequence:
 
 ```powershell
 git status
-git add README.md docker/compose.yaml docker/otel-collector-config.yaml common/signoz/otel-collector-opamp-config.yaml HANDOFF.md
+git add README.md stacks/signoz/compose.yaml stacks/signoz/otel-collector-config.yaml stacks/signoz/common/signoz/otel-collector-opamp-config.yaml HANDOFF.md
 git commit -m "Update SigNoz stack and add ops-board handoff"
 git push
 ```
@@ -92,9 +92,9 @@ Do not bump ClickHouse independently just because newer ClickHouse tags exist. T
 Files changed:
 
 - `README.md`
-- `docker/compose.yaml`
-- `docker/otel-collector-config.yaml`
-- `common/signoz/otel-collector-opamp-config.yaml`
+- `stacks/signoz/compose.yaml`
+- `stacks/signoz/otel-collector-config.yaml`
+- `stacks/signoz/common/signoz/otel-collector-opamp-config.yaml`
 - `HANDOFF.md`
 
 Meaning of the changes:
@@ -102,7 +102,7 @@ Meaning of the changes:
 - Upgraded SigNoz from `v0.111.0` to `v0.125.1`
 - Upgraded SigNoz OTel collector from `v0.142.0` to `v0.144.4`
 - Replaced old separate schema migrator services with `signoz-telemetrystore-migrator`
-- Added OpAMP manager config at `common/signoz/otel-collector-opamp-config.yaml`
+- Added OpAMP manager config at `stacks/signoz/common/signoz/otel-collector-opamp-config.yaml`
 - Added `metadataexporter` to the collector config
 - Documented current stack pins in `README.md`
 
@@ -178,8 +178,8 @@ After recloning the renamed `ops-board` repo:
 1. Confirm the repo is clean and the remote points to `ops-board`.
 2. Move the current SigNoz stack into `stacks/signoz/`.
 3. Update paths inside `stacks/signoz/compose.yaml`.
-   - Current compose paths assume the file lives in `docker/`.
-   - After moving, bind mounts such as `../common/...` must be adjusted.
+   - Current compose paths should be relative to `stacks/signoz/`.
+   - Bind mounts should use paths such as `./common/...`.
 4. Update commands in `README.md` and `docs/ONBOARDING.md`.
 5. Add root `.env.example`.
 6. Add root `.gitignore`.

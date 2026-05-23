@@ -20,13 +20,13 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 ops-board/
   README.md
   HANDOFF.md
-  .env.example
-  .gitignore
+  .env.example                  (planned)
+  .gitignore                    (planned)
 
-  access/
+  access/                       (planned)
     tailscale.md
 
-  scripts/
+  scripts/                      (planned)
     backup.ps1
     restore.ps1
     status.ps1
@@ -69,21 +69,9 @@ Tailscale is the private network boundary for now.
 - Keep stack ports bound explicitly for local and tailnet access.
 - Use Tailscale MagicDNS names in docs and future dashboards.
 
-See `access/tailscale.md` for the current endpoint conventions.
+The `access/tailscale.md` guide is planned for the next documentation pass.
 
 ## Stack Commands
-
-Show stack status:
-
-```powershell
-.\scripts\status.ps1
-```
-
-Update a stack:
-
-```powershell
-.\scripts\update-stack.ps1 -Stack signoz
-```
 
 Stop SigNoz while preserving volumes:
 
@@ -96,6 +84,8 @@ Reset SigNoz and wipe its named volumes:
 ```powershell
 docker compose -p signoz -f stacks/signoz/compose.yaml down -v
 ```
+
+Planned helper scripts will later wrap common status, backup, restore, and update workflows under `scripts/`.
 
 ## Current Priorities
 
