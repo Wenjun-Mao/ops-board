@@ -10,6 +10,15 @@ docker compose -p signoz -f docker/compose.yaml up -d --remove-orphans
 
 Open UI at **http://localhost:8080**
 
+## Current stack pins
+
+| Component | Image |
+|-----------|-------|
+| SigNoz | `signoz/signoz:v0.125.1` |
+| SigNoz OTel Collector | `signoz/signoz-otel-collector:v0.144.4` |
+| ClickHouse | `clickhouse/clickhouse-server:25.5.6` |
+| ZooKeeper | `signoz/zookeeper:3.7.1` |
+
 ## Restricted Network Setup (No GitHub Access)
 
 If the host cannot reach GitHub (common in restricted networks), pre-seed the ClickHouse init binary tarball locally.
@@ -98,8 +107,8 @@ signoz/
 │   └── ONBOARDING.md      ← per-project onboarding guide
 ├── common/                ← shared config mounted into containers
 │   ├── clickhouse/
-│   ├── dashboards/
 │   └── signoz/
+│       └── otel-collector-opamp-config.yaml
 └── docker/
     ├── compose.yaml
     └── otel-collector-config.yaml
