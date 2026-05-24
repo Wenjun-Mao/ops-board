@@ -19,7 +19,6 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 ```text
 ops-board/
   README.md
-  HANDOFF.md
   .env.example
   .gitignore
 

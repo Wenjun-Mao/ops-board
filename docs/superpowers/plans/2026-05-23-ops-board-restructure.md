@@ -15,7 +15,7 @@
 Create or modify these paths:
 
 - Modify: `README.md` - root ops-board overview, repo layout, Tailscale-first model, stack commands.
-- Modify: `HANDOFF.md` - mark the rename/reclone completed and point to the new layout.
+- Remove: `HANDOFF.md` - no longer needed after the rename/reclone was completed.
 - Create: `.env.example` - repo-wide non-secret defaults and documented placeholders.
 - Create: `.gitignore` - ignore local env files, stack runtime data, backups, logs, and editor files.
 - Create: `access/tailscale.md` - Tailscale/MagicDNS access model and SigNoz endpoints.
@@ -291,7 +291,6 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 ```text
 ops-board/
   README.md
-  HANDOFF.md
   .env.example
   .gitignore
 
