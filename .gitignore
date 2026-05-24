@@ -3,10 +3,19 @@
 .env.*
 !.env.example
 
+# Stack-local environment files
+/stacks/*/*.env
+!/stacks/*/*.env.example
+
 # Runtime data and bind-mounted service state
 /stacks/*/data/
 /stacks/*/runtime/
 /stacks/*/outputs/
+
+# Plane generated installer/runtime files
+/stacks/plane/plane-selfhost/
+/stacks/plane/plane-app/
+/stacks/plane/plane-app-preview/
 
 # Local Docker secret files
 /secrets/*

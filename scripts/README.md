@@ -41,6 +41,15 @@ Use `-Stack` when another stack is added:
 
 The script includes the root `.env` file automatically when it exists.
 
+Common stack names:
+
+```powershell
+.\scripts\status.ps1 -Stack signoz
+.\scripts\status.ps1 -Stack uptime-kuma
+.\scripts\status.ps1 -Stack homepage
+.\scripts\status.ps1 -Stack plane
+```
+
 ## update-stack.ps1
 
 Pulls images for a stack and runs `docker compose up -d`. It defaults to SigNoz:
@@ -56,6 +65,14 @@ Use `-RemoveOrphans` only when you deliberately want Compose to remove container
 ```
 
 For stateful stacks, check the stack README before using this during a version upgrade.
+
+Update a specific stack:
+
+```powershell
+.\scripts\update-stack.ps1 -Stack uptime-kuma
+.\scripts\update-stack.ps1 -Stack homepage
+.\scripts\update-stack.ps1 -Stack plane
+```
 
 ## backup.ps1
 
