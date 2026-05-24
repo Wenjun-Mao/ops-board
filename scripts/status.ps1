@@ -1,17 +1,24 @@
 param(
-    [string]$Stack = "signoz"
+    [string]$Stack = "ops-board"
 )
 
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$composeFile = Join-Path $repoRoot "stacks\$Stack\compose.yaml"
 $envFile = Join-Path $repoRoot ".env"
-$stackDir = Split-Path -Parent $composeFile
-$stackEnvFiles = @(
-    (Join-Path $stackDir ".env"),
-    (Join-Path $stackDir "$Stack.env")
-)
+
+if ($Stack -eq "ops-board") {
+    $composeFile = Join-Path $repoRoot "compose.yaml"
+    $stackEnvFiles = @()
+}
+else {
+    $composeFile = Join-Path $repoRoot "stacks\$Stack\compose.yaml"
+    $stackDir = Split-Path -Parent $composeFile
+    $stackEnvFiles = @(
+        (Join-Path $stackDir ".env"),
+        (Join-Path $stackDir "$Stack.env")
+    )
+}
 
 if (-not (Test-Path $composeFile)) {
     throw "Compose file not found for stack '$Stack': $composeFile"
