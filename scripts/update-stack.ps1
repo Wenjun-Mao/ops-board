@@ -17,7 +17,7 @@ $composeArgs = @("compose")
 if (Test-Path $envFile) {
     $composeArgs += @("--env-file", $envFile)
 }
-$composeArgs += @("-p", $Stack, "-f", $composeFile)
+$composeArgs += @("-f", $composeFile)
 
 docker @composeArgs pull
 $upArgs = $composeArgs + @("up", "-d")

@@ -19,6 +19,8 @@
 #   ZooKeeper     2181
 # ─────────────────────────────────────────────────────────────────────
 
+name: signoz
+
 x-common: &common
   networks:
     - signoz-net

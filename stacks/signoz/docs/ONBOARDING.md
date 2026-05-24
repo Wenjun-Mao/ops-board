@@ -20,7 +20,7 @@ Published endpoints
 Start SigNoz
 1) From this repo root:
    - `.\scripts\init-local-config.ps1`
-   - `docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d`
+   - `docker compose --env-file .env -f stacks/signoz/compose.yaml up -d`
 2) Open UI:
    - `http://localhost:8080`
 3) Verify collector port is exposed:

@@ -14,6 +14,8 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 | Plane | Project and kanban management | Planned |
 | Healthchecks | Scheduled job monitoring | Optional |
 
+The only runnable stack in the repo today is SigNoz. The planned stacks above will become runnable as their `stacks/<name>/compose.yaml` files are added.
+
 ## Layout
 
 ```text
@@ -26,6 +28,7 @@ ops-board/
     tailscale.md
 
   scripts/
+    README.md
     backup.ps1
     init-local-config.ps1
     restore.ps1
@@ -57,10 +60,10 @@ This creates ignored local files:
 - `.env`
 - `secrets/signoz_jwt_secret`
 
-Start SigNoz:
+Start the full SigNoz stack:
 
 ```powershell
-docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d
+docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
 ```
 
 Open the SigNoz UI:
@@ -99,6 +102,8 @@ Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts
 
 ## Stack Commands
 
+See `scripts/README.md` for the full script reference.
+
 Show SigNoz status:
 
 ```powershell
@@ -120,13 +125,13 @@ Remove orphaned containers during an update only when you intentionally want cle
 Stop SigNoz while preserving volumes:
 
 ```powershell
-docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down
+docker compose --env-file .env -f stacks/signoz/compose.yaml down
 ```
 
 Reset SigNoz and wipe its named volumes:
 
 ```powershell
-docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -f stacks/signoz/compose.yaml down -v
 ```
 
 Backup and restore scripts are placeholders until stack-specific backup jobs are defined:

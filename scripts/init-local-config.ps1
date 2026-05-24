@@ -46,4 +46,4 @@ else {
 
 Write-Host "Local config is ready."
 Write-Host "Start SigNoz with:"
-Write-Host "docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d"
+Write-Host "docker compose --env-file .env -f stacks/signoz/compose.yaml up -d"
