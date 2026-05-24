@@ -142,17 +142,24 @@ services:
       # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   signoz:
     !!merge <<: *db-depend
-    image: signoz/signoz:${VERSION:-v0.125.1}
+    image: signoz/signoz:${SIGNOZ_VERSION:-v0.125.1}
     container_name: signoz
     ports:
       - "0.0.0.0:${SIGNOZ_HTTP_PORT:-8080}:8080"   # UI - reachable from LAN / Tailscale
+    secrets:
+      - signoz_jwt_secret
     volumes:
       - sqlite:/var/lib/signoz/
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export SIGNOZ_TOKENIZER_JWT_SECRET="$$(cat /run/secrets/signoz_jwt_secret)"
+        exec ./signoz server
     environment:
       - SIGNOZ_ALERTMANAGER_PROVIDER=signoz
       - SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
       - SIGNOZ_SQLSTORE_SQLITE_PATH=/var/lib/signoz/signoz.db
-      - SIGNOZ_TOKENIZER_JWT_SECRET=secret
     healthcheck:
       test:
         - CMD
@@ -165,7 +172,7 @@ services:
       retries: 3
   otel-collector:
     !!merge <<: *db-depend
-    image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.144.4}
+    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.4}
     container_name: signoz-otel-collector
     entrypoint:
       - /bin/sh
@@ -191,7 +198,7 @@ services:
       - "0.0.0.0:${SIGNOZ_COLLECTOR_HEALTH_PORT:-13133}:13133" # collector health probe
   signoz-telemetrystore-migrator:
     !!merge <<: *db-depend
-    image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.144.4}
+    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.4}
     container_name: signoz-telemetrystore-migrator
     environment:
       - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
@@ -210,6 +217,9 @@ services:
 networks:
   signoz-net:
     name: signoz-net
+secrets:
+  signoz_jwt_secret:
+    file: ${SIGNOZ_JWT_SECRET_FILE:-../../secrets/signoz_jwt_secret}
 volumes:
   clickhouse:
     name: signoz-clickhouse

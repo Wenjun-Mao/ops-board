@@ -8,6 +8,10 @@
 /stacks/*/runtime/
 /stacks/*/outputs/
 
+# Local Docker secret files
+/secrets/*
+!/secrets/.gitignore
+
 # Backups and archives
 /backups/
 /backups/**/*.sql

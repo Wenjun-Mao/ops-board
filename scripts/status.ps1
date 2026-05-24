@@ -6,9 +6,16 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $composeFile = Join-Path $repoRoot "stacks\$Stack\compose.yaml"
+$envFile = Join-Path $repoRoot ".env"
 
 if (-not (Test-Path $composeFile)) {
     throw "Compose file not found for stack '$Stack': $composeFile"
 }
 
-docker compose -p $Stack -f $composeFile ps
+$composeArgs = @("compose")
+if (Test-Path $envFile) {
+    $composeArgs += @("--env-file", $envFile)
+}
+$composeArgs += @("-p", $Stack, "-f", $composeFile)
+
+docker @composeArgs ps

@@ -27,9 +27,13 @@ ops-board/
 
   scripts/
     backup.ps1
+    init-local-config.ps1
     restore.ps1
     status.ps1
     update-stack.ps1
+
+  secrets/
+    .gitignore
 
   stacks/
     signoz/
@@ -42,12 +46,21 @@ ops-board/
 
 ## Quick Start
 
-Use `.env.example` as a reference for local settings. For stack-specific Compose variables, export them in your shell or copy the relevant values into that stack's `.env` file.
+Create local config and Docker secret files:
+
+```powershell
+.\scripts\init-local-config.ps1
+```
+
+This creates ignored local files:
+
+- `.env`
+- `secrets/signoz_jwt_secret`
 
 Start SigNoz:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml up -d --remove-orphans
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d
 ```
 
 Open the SigNoz UI:
@@ -72,6 +85,18 @@ Tailscale is the private network boundary for now.
 
 See `access/tailscale.md` for endpoint conventions.
 
+## Config And Secrets
+
+Use `.env` for non-secret runtime knobs such as image tags, ports, hostnames, and backup paths. Use Docker secret files under `secrets/` for credentials and token material.
+
+The SigNoz stack currently uses one Docker secret:
+
+```text
+secrets/signoz_jwt_secret
+```
+
+Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts\init-local-config.ps1 -Force` only when you intentionally want to overwrite local settings and rotate the SigNoz JWT secret.
+
 ## Stack Commands
 
 Show SigNoz status:
@@ -95,13 +120,13 @@ Remove orphaned containers during an update only when you intentionally want cle
 Stop SigNoz while preserving volumes:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml down
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down
 ```
 
 Reset SigNoz and wipe its named volumes:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down -v
 ```
 
 Backup and restore scripts are placeholders until stack-specific backup jobs are defined:

@@ -7,10 +7,11 @@ Shared SigNoz observability stack for centralized logs, traces, metrics, and OTL
 From the repo root:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml up -d --remove-orphans
+.\scripts\init-local-config.ps1
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d
 ```
 
-Stack-specific Compose variables can be exported in your shell or placed in `stacks/signoz/.env`.
+Compose variables live in the repo root `.env`. Secret values live in ignored files under `secrets/` and are mounted with Docker secrets.
 
 Open UI:
 
@@ -67,12 +68,12 @@ If the host cannot reach GitHub, pre-seed the ClickHouse init binary tarball loc
 2. Copy and rename it to:
    - `stacks/signoz/common/clickhouse/user_scripts/histogram-quantile.tar.gz`
 3. Start stack:
-   - `docker compose -p signoz -f stacks/signoz/compose.yaml up -d --remove-orphans`
+   - `docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml up -d`
 4. Verify init succeeded:
    - `docker logs signoz-init-clickhouse --tail 100`
    - `docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"`
 
-Optional: if you have an accessible mirror URL, set `HISTOGRAM_QUANTILE_URL` in `stacks/signoz/.env`. The compose file passes that value into `signoz-init-clickhouse`.
+Optional: if you have an accessible mirror URL, set `HISTOGRAM_QUANTILE_URL` in the repo root `.env`. The compose file passes that value into `signoz-init-clickhouse`.
 
 ## Onboarding Projects
 
@@ -83,11 +84,11 @@ See `docs/ONBOARDING.md`.
 Stop while keeping data:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml down
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down
 ```
 
 Full reset:
 
 ```powershell
-docker compose -p signoz -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -p signoz -f stacks/signoz/compose.yaml down -v
 ```
