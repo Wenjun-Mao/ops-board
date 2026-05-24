@@ -1,0 +1,13 @@
+# Root Compose aggregator for the whole Ops Board.
+# The included stack files remain the source of truth for service definitions.
+name: ops-board
+
+include:
+  - path: stacks/signoz/compose.yaml
+    env_file: .env
+  - path: stacks/uptime-kuma/compose.yaml
+    env_file: .env
+  - path: stacks/homepage/compose.yaml
+    env_file: .env
+  - path: stacks/plane/compose.yaml
+    env_file: stacks/plane/plane.env
