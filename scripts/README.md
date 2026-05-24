@@ -39,7 +39,10 @@ Use `-Stack` when another stack is added:
 .\scripts\status.ps1 -Stack uptime-kuma
 ```
 
-The script includes the root `.env` file automatically when it exists.
+The script includes the root `.env` file automatically when it exists. It also includes stack-local env files when present:
+
+- `stacks/<stack>/.env`
+- `stacks/<stack>/<stack>.env`
 
 Common stack names:
 
@@ -65,6 +68,8 @@ Use `-RemoveOrphans` only when you deliberately want Compose to remove container
 ```
 
 For stateful stacks, check the stack README before using this during a version upgrade.
+
+The script includes the root `.env` file first, then stack-local env files when present. Stack-local values override root defaults.
 
 Update a specific stack:
 

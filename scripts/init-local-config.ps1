@@ -9,6 +9,10 @@ $envExample = Join-Path $repoRoot ".env.example"
 $envFile = Join-Path $repoRoot ".env"
 $secretsDir = Join-Path $repoRoot "secrets"
 $signozJwtSecretFile = Join-Path $secretsDir "signoz_jwt_secret"
+$planeSecretKeyFile = Join-Path $secretsDir "plane_secret_key"
+$planePostgresPasswordFile = Join-Path $secretsDir "plane_postgres_password"
+$planeRabbitmqPasswordFile = Join-Path $secretsDir "plane_rabbitmq_password"
+$planeMinioPasswordFile = Join-Path $secretsDir "plane_minio_password"
 
 function New-SecretValue {
     $bytes = New-Object byte[] 48
@@ -19,6 +23,24 @@ function New-SecretValue {
     }
     finally {
         $rng.Dispose()
+    }
+}
+
+function Set-SecretFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    if ((-not (Test-Path -LiteralPath $Path)) -or $Force) {
+        New-SecretValue | Set-Content -LiteralPath $Path -NoNewline -Encoding ascii
+        Write-Host "Wrote Docker secret: $Label"
+    }
+    else {
+        Write-Host "Keeping existing Docker secret: $Label. Use -Force to rotate it."
     }
 }
 
@@ -36,13 +58,11 @@ else {
 
 New-Item -ItemType Directory -Force -Path $secretsDir | Out-Null
 
-if ((-not (Test-Path -LiteralPath $signozJwtSecretFile)) -or $Force) {
-    New-SecretValue | Set-Content -LiteralPath $signozJwtSecretFile -NoNewline -Encoding ascii
-    Write-Host "Wrote Docker secret: secrets/signoz_jwt_secret"
-}
-else {
-    Write-Host "Keeping existing Docker secret: secrets/signoz_jwt_secret. Use -Force to rotate it."
-}
+Set-SecretFile -Path $signozJwtSecretFile -Label "secrets/signoz_jwt_secret"
+Set-SecretFile -Path $planeSecretKeyFile -Label "secrets/plane_secret_key"
+Set-SecretFile -Path $planePostgresPasswordFile -Label "secrets/plane_postgres_password"
+Set-SecretFile -Path $planeRabbitmqPasswordFile -Label "secrets/plane_rabbitmq_password"
+Set-SecretFile -Path $planeMinioPasswordFile -Label "secrets/plane_minio_password"
 
 Write-Host "Local config is ready."
 Write-Host "Start SigNoz with:"
