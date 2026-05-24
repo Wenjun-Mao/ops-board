@@ -43,3 +43,5 @@ logs/
 Thumbs.db
 .idea/
 .vscode/
+
+.superpowers/
