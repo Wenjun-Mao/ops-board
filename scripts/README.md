@@ -2,7 +2,7 @@
 
 These scripts are repo-level helpers for local operations. Run them from any working directory; each script resolves the repo root from its own path.
 
-All stack-aware scripts look for `stacks/<stack>/compose.yaml`. The SigNoz compose file owns its Docker Compose project name with `name: signoz`, so normal commands do not need `-p signoz`.
+All stack-aware scripts look for `stacks/<stack>/compose.yaml`. Each active stack owns its Docker Compose project name with top-level `name:`, so normal commands do not need `-p`.
 
 ## init-local-config.ps1
 
@@ -10,6 +10,10 @@ Creates local runtime config that must not be committed:
 
 - `.env`
 - `secrets/signoz_jwt_secret`
+- `secrets/plane_secret_key`
+- `secrets/plane_postgres_password`
+- `secrets/plane_rabbitmq_password`
+- `secrets/plane_minio_password`
 
 Use it after cloning the repo, before starting a stack for the first time:
 
@@ -17,13 +21,13 @@ Use it after cloning the repo, before starting a stack for the first time:
 .\scripts\init-local-config.ps1
 ```
 
-Use `-Force` only when you intentionally want to overwrite `.env` from `.env.example` and rotate the SigNoz JWT secret:
+Use `-Force` only when you intentionally want to overwrite `.env` from `.env.example` and rotate local stack secrets:
 
 ```powershell
 .\scripts\init-local-config.ps1 -Force
 ```
 
-Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Restart SigNoz after rotation.
+Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets requires updating `stacks/plane/plane.env` and recreating the Plane stack. Restart affected stacks after rotation.
 
 ## status.ps1
 
@@ -105,6 +109,15 @@ Start SigNoz:
 
 ```powershell
 docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
+```
+
+Start all active stacks in rollout order:
+
+```powershell
+docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
+docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
+docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
+docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml up -d
 ```
 
 Stop SigNoz while preserving volumes:

@@ -14,7 +14,7 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 | Plane | Project and kanban management | Active |
 | Healthchecks | Scheduled job monitoring | Optional later |
 
-SigNoz is already runnable. This rollout adds Uptime Kuma first, Homepage second, and Plane last.
+The core rollout is active: start SigNoz first, Uptime Kuma second, Homepage third, and Plane last.
 
 ## Layout
 
@@ -78,11 +78,26 @@ This creates ignored local files:
 
 - `.env`
 - `secrets/signoz_jwt_secret`
+- `secrets/plane_secret_key`
+- `secrets/plane_postgres_password`
+- `secrets/plane_rabbitmq_password`
+- `secrets/plane_minio_password`
 
 Start the full SigNoz stack:
 
 ```powershell
 docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
+```
+
+Plane also needs an ignored stack-local env file. Create `stacks/plane/plane.env` from `stacks/plane/plane.env.example` and fill the `change-me` values before first start.
+
+Start the ops-board stacks in rollout order:
+
+```powershell
+docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
+docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
+docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
+docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml up -d
 ```
 
 Open the SigNoz UI:
@@ -117,7 +132,16 @@ The SigNoz stack currently uses one Docker secret:
 secrets/signoz_jwt_secret
 ```
 
-Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts\init-local-config.ps1 -Force` only when you intentionally want to overwrite local settings and rotate the SigNoz JWT secret.
+Plane uses ignored secret material to populate its stack-local `stacks/plane/plane.env` file:
+
+```text
+secrets/plane_secret_key
+secrets/plane_postgres_password
+secrets/plane_rabbitmq_password
+secrets/plane_minio_password
+```
+
+Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts\init-local-config.ps1 -Force` only when you intentionally want to overwrite local settings and rotate local stack secrets.
 
 ## Stack Commands
 
@@ -127,6 +151,15 @@ Show SigNoz status:
 
 ```powershell
 .\scripts\status.ps1 -Stack signoz
+```
+
+Show all stack statuses:
+
+```powershell
+.\scripts\status.ps1 -Stack signoz
+.\scripts\status.ps1 -Stack uptime-kuma
+.\scripts\status.ps1 -Stack homepage
+.\scripts\status.ps1 -Stack plane
 ```
 
 Update SigNoz:
@@ -162,7 +195,7 @@ Backup and restore scripts are placeholders until stack-specific backup jobs are
 
 ## Current Priorities
 
-1. Add Uptime Kuma.
-2. Add Homepage after monitored services have stable URLs.
-3. Define real backup/restore jobs before adding heavier stateful services.
-4. Add Plane after backup habits are in place.
+1. Create the Uptime Kuma first admin account, status page, and monitors.
+2. Finish stack-specific backup and restore jobs.
+3. Decide whether Healthchecks adds value beyond Uptime Kuma.
+4. Revisit a reverse proxy only after Tailscale-first access feels limiting.
