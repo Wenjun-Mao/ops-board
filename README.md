@@ -9,7 +9,7 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 | Stack | Purpose | Status |
 |-------|---------|--------|
 | SigNoz | Central observability for logs, traces, metrics, and telemetry ingestion | Active |
-| Uptime Kuma | Uptime and endpoint monitoring | Planned in this rollout |
+| Uptime Kuma | Uptime and endpoint monitoring | Active |
 | Homepage | Private dashboard and service directory | Planned after Uptime Kuma |
 | Plane | Project and kanban management | Planned after Homepage |
 | Healthchecks | Scheduled job monitoring | Optional later |
@@ -43,6 +43,11 @@ ops-board/
       compose.yaml
       otel-collector-config.yaml
       common/
+      docs/
+      README.md
+
+    uptime-kuma/
+      compose.yaml
       docs/
       README.md
 ```
