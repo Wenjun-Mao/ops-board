@@ -248,12 +248,22 @@ services:
 
 volumes:
   pgdata:
+    name: plane_pgdata
   redisdata:
+    name: plane_redisdata
   uploads:
+    name: plane_uploads
   logs_api:
+    name: plane_logs_api
   logs_worker:
+    name: plane_logs_worker
   logs_beat-worker:
+    name: plane_logs_beat-worker
   logs_migrator:
+    name: plane_logs_migrator
   rabbitmq_data:
+    name: plane_rabbitmq_data
   proxy_config:
+    name: plane_proxy_config
   proxy_data:
+    name: plane_proxy_data
