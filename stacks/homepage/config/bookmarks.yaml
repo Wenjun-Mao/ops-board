@@ -1,0 +1,16 @@
+- References:
+    - Ops Board GitHub:
+        - href: https://github.com/Wenjun-Mao/ops-board
+          description: Repository
+    - SigNoz Docs:
+        - href: https://signoz.io/docs/
+          description: Observability docs
+    - Uptime Kuma:
+        - href: https://github.com/louislam/uptime-kuma
+          description: Monitoring project
+    - Homepage Docs:
+        - href: https://gethomepage.dev/
+          description: Dashboard docs
+    - Plane Docs:
+        - href: https://developers.plane.so/self-hosting/overview
+          description: Self-hosting docs

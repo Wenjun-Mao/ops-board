@@ -1,0 +1,20 @@
+name: homepage
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:${HOMEPAGE_VERSION:-v1.13.1}
+    container_name: homepage
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${HOMEPAGE_PORT:-3000}:3000"
+    volumes:
+      - ./config:/app/config
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS:-localhost:3000,127.0.0.1:3000}
+      HOMEPAGE_VAR_SIGNOZ_URL: ${SIGNOZ_PUBLIC_URL:-http://localhost:8080}
+      HOMEPAGE_VAR_UPTIME_KUMA_URL: ${UPTIME_KUMA_PUBLIC_URL:-http://localhost:3001}
+      HOMEPAGE_VAR_HOMEPAGE_URL: ${HOMEPAGE_PUBLIC_URL:-http://localhost:3000}
+      HOMEPAGE_VAR_PLANE_URL: ${PLANE_PUBLIC_URL:-http://localhost:8082}
+      HOMEPAGE_VAR_UPTIME_KUMA_STATUS_SLUG: ${UPTIME_KUMA_STATUS_SLUG:-ops-board}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

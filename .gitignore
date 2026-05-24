@@ -11,6 +11,7 @@
 /stacks/*/data/
 /stacks/*/runtime/
 /stacks/*/outputs/
+/stacks/homepage/config/kubernetes.yaml
 
 # Plane generated installer/runtime files
 /stacks/plane/plane-selfhost/

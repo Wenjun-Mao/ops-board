@@ -1,0 +1,20 @@
+- Observability:
+    - SigNoz:
+        href: "{{HOMEPAGE_VAR_SIGNOZ_URL}}"
+        description: Logs, traces, metrics, and OTLP ingestion
+        ping: "{{HOMEPAGE_VAR_SIGNOZ_URL}}/api/v1/health"
+    - Uptime Kuma:
+        href: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
+        description: Endpoint and uptime monitoring
+        widget:
+          type: uptimekuma
+          url: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
+          slug: "{{HOMEPAGE_VAR_UPTIME_KUMA_STATUS_SLUG}}"
+    - Homepage:
+        href: "{{HOMEPAGE_VAR_HOMEPAGE_URL}}"
+        description: Private service directory
+
+- Project Management:
+    - Plane:
+        href: "{{HOMEPAGE_VAR_PLANE_URL}}"
+        description: Project and kanban management

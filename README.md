@@ -10,7 +10,7 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 |-------|---------|--------|
 | SigNoz | Central observability for logs, traces, metrics, and telemetry ingestion | Active |
 | Uptime Kuma | Uptime and endpoint monitoring | Active |
-| Homepage | Private dashboard and service directory | Planned after Uptime Kuma |
+| Homepage | Private dashboard and service directory | Active |
 | Plane | Project and kanban management | Planned after Homepage |
 | Healthchecks | Scheduled job monitoring | Optional later |
 
@@ -49,6 +49,15 @@ ops-board/
     uptime-kuma/
       compose.yaml
       docs/
+      README.md
+
+    homepage/
+      compose.yaml
+      config/
+        bookmarks.yaml
+        services.yaml
+        settings.yaml
+        widgets.yaml
       README.md
 ```
 
