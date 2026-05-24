@@ -14,6 +14,8 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 | Plane | Project and kanban management | Active |
 | Healthchecks | Scheduled job monitoring | Optional later |
 
+The root `compose.yaml` is the normal full-board entrypoint. It uses Docker Compose `include` to pull in the per-stack Compose files, so `stacks/signoz/compose.yaml`, `stacks/uptime-kuma/compose.yaml`, `stacks/homepage/compose.yaml`, and `stacks/plane/compose.yaml` remain the source of truth for their services.
+
 The core rollout is active: start SigNoz first, Uptime Kuma second, Homepage third, and Plane last.
 
 ## Layout
@@ -21,6 +23,7 @@ The core rollout is active: start SigNoz first, Uptime Kuma second, Homepage thi
 ```text
 ops-board/
   README.md
+  compose.yaml
   .env.example
   .gitignore
 
@@ -83,21 +86,12 @@ This creates ignored local files:
 - `secrets/plane_rabbitmq_password`
 - `secrets/plane_minio_password`
 
-Start the full SigNoz stack:
+This also creates the ignored `stacks/plane/plane.env` file when it is missing.
+
+Start Ops Board:
 
 ```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
-```
-
-Plane also needs an ignored stack-local env file. Create `stacks/plane/plane.env` from `stacks/plane/plane.env.example` and fill the `change-me` values before first start.
-
-Start the ops-board stacks in rollout order:
-
-```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
-docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
-docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
-docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml up -d
+docker compose --env-file .env -f compose.yaml up -d
 ```
 
 Open the SigNoz UI:
@@ -111,6 +105,20 @@ If this host is joined to Tailscale, use the host's MagicDNS name from other tai
 ```text
 http://<tailscale-hostname>:8080
 ```
+
+## Clean Rebuild From Separate Projects
+
+During this development phase, it is safe to wipe local stack data and rebuild under the root `ops-board` project:
+
+```powershell
+docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml down -v
+docker compose --env-file .env -f stacks/homepage/compose.yaml down -v
+docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml down -v
+docker compose --env-file .env -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -f compose.yaml up -d
+```
+
+This deletes local Docker volumes for these stacks. Remove `-v` from each `down` command when preserving data becomes important.
 
 ## Access Model
 
@@ -147,13 +155,13 @@ Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts
 
 See `scripts/README.md` for the full script reference.
 
-Show SigNoz status:
+Show Ops Board status:
 
 ```powershell
-.\scripts\status.ps1 -Stack signoz
+.\scripts\status.ps1
 ```
 
-Show all stack statuses:
+Use individual stack names only when intentionally operating a stack outside the root aggregator:
 
 ```powershell
 .\scripts\status.ps1 -Stack signoz
@@ -162,28 +170,28 @@ Show all stack statuses:
 .\scripts\status.ps1 -Stack plane
 ```
 
-Update SigNoz:
+Update Ops Board:
 
 ```powershell
-.\scripts\update-stack.ps1 -Stack signoz
+.\scripts\update-stack.ps1
 ```
 
 Remove orphaned containers during an update only when you intentionally want cleanup:
 
 ```powershell
-.\scripts\update-stack.ps1 -Stack signoz -RemoveOrphans
+.\scripts\update-stack.ps1 -RemoveOrphans
 ```
 
-Stop SigNoz while preserving volumes:
+Stop Ops Board while preserving volumes:
 
 ```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml down
+docker compose --env-file .env -f compose.yaml down
 ```
 
-Reset SigNoz and wipe its named volumes:
+Reset Ops Board and wipe its named volumes:
 
 ```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -f compose.yaml down -v
 ```
 
 Backup and restore scripts are placeholders until stack-specific backup jobs are defined:

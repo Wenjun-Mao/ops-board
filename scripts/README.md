@@ -2,7 +2,7 @@
 
 These scripts are repo-level helpers for local operations. Run them from any working directory; each script resolves the repo root from its own path.
 
-All stack-aware scripts look for `stacks/<stack>/compose.yaml`. Each active stack owns its Docker Compose project name with top-level `name:`, so normal commands do not need `-p`.
+All stack-aware scripts look for root `compose.yaml` when `-Stack ops-board` is used. `ops-board` is the default. Individual stack names still resolve to `stacks/<stack>/compose.yaml` for isolated maintenance.
 
 ## init-local-config.ps1
 
@@ -14,6 +14,7 @@ Creates local runtime config that must not be committed:
 - `secrets/plane_postgres_password`
 - `secrets/plane_rabbitmq_password`
 - `secrets/plane_minio_password`
+- `stacks/plane/plane.env`
 
 Use it after cloning the repo, before starting a stack for the first time:
 
@@ -27,17 +28,17 @@ Use `-Force` only when you intentionally want to overwrite `.env` from `.env.exa
 .\scripts\init-local-config.ps1 -Force
 ```
 
-Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets requires updating `stacks/plane/plane.env` and recreating the Plane stack. Restart affected stacks after rotation.
+Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets with `-Force` recreates `stacks/plane/plane.env`; recreate affected containers after rotation.
 
 ## status.ps1
 
-Shows Docker Compose status for one stack. It includes completed one-shot services such as init and migration jobs, and defaults to SigNoz:
+Shows Docker Compose status for one stack. It includes completed one-shot services such as init and migration jobs, and defaults to the root Ops Board aggregator:
 
 ```powershell
 .\scripts\status.ps1
 ```
 
-Use `-Stack` when another stack is added:
+Use `-Stack` for isolated stack maintenance:
 
 ```powershell
 .\scripts\status.ps1 -Stack uptime-kuma
@@ -51,6 +52,7 @@ The script includes the root `.env` file automatically when it exists. It also i
 Common stack names:
 
 ```powershell
+.\scripts\status.ps1 -Stack ops-board
 .\scripts\status.ps1 -Stack signoz
 .\scripts\status.ps1 -Stack uptime-kuma
 .\scripts\status.ps1 -Stack homepage
@@ -59,7 +61,7 @@ Common stack names:
 
 ## update-stack.ps1
 
-Pulls images for a stack and runs `docker compose up -d`. It defaults to SigNoz:
+Pulls images for a stack and runs `docker compose up -d`. It defaults to the root Ops Board aggregator:
 
 ```powershell
 .\scripts\update-stack.ps1
@@ -78,6 +80,7 @@ The script includes the root `.env` file first, then stack-local env files when 
 Update a specific stack:
 
 ```powershell
+.\scripts\update-stack.ps1 -Stack ops-board
 .\scripts\update-stack.ps1 -Stack uptime-kuma
 .\scripts\update-stack.ps1 -Stack homepage
 .\scripts\update-stack.ps1 -Stack plane
@@ -105,29 +108,26 @@ This is currently a placeholder. It does not yet restore SigNoz, ClickHouse, or 
 
 ## Direct Docker Compose Commands
 
-Start SigNoz:
+Start Ops Board:
+
+```powershell
+docker compose --env-file .env -f compose.yaml up -d
+```
+
+Start an individual stack outside the root aggregator:
 
 ```powershell
 docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
 ```
 
-Start all active stacks in rollout order:
+Stop Ops Board while preserving volumes:
 
 ```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
-docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
-docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
-docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml up -d
+docker compose --env-file .env -f compose.yaml down
 ```
 
-Stop SigNoz while preserving volumes:
+Reset Ops Board and wipe named volumes:
 
 ```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml down
-```
-
-Reset SigNoz and wipe named volumes:
-
-```powershell
-docker compose --env-file .env -f stacks/signoz/compose.yaml down -v
+docker compose --env-file .env -f compose.yaml down -v
 ```
