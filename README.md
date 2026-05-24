@@ -11,7 +11,7 @@ The repo is organized as independent Docker Compose stacks. Tailscale is the fir
 | SigNoz | Central observability for logs, traces, metrics, and telemetry ingestion | Active |
 | Uptime Kuma | Uptime and endpoint monitoring | Active |
 | Homepage | Private dashboard and service directory | Active |
-| Plane | Project and kanban management | Planned after Homepage |
+| Plane | Project and kanban management | Active |
 | Healthchecks | Scheduled job monitoring | Optional later |
 
 SigNoz is already runnable. This rollout adds Uptime Kuma first, Homepage second, and Plane last.
@@ -58,6 +58,11 @@ ops-board/
         services.yaml
         settings.yaml
         widgets.yaml
+      README.md
+
+    plane/
+      compose.yaml
+      plane.env.example
       README.md
 ```
 

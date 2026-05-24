@@ -12,13 +12,16 @@ Community Edition is AGPL v3 and is the best fit for this repo's first Plane pas
 
 Do not hand-write Plane's compose file from memory.
 
-Use Plane's official setup flow to acquire the current Community Edition `docker-compose.yaml` and `plane.env`, then adapt the generated files into this folder with the smallest possible changes:
+Use Plane's official setup flow, or the equivalent official release assets, to acquire the current Community Edition `docker-compose.yaml` and `plane.env`, then adapt the generated files into this folder with the smallest possible changes:
 
 - rename `docker-compose.yaml` to `compose.yaml`
 - add top-level `name: plane`
 - avoid port `8080` because SigNoz already uses it
 - keep `plane.env` ignored
 - keep `plane.env.example` sanitized and committed
+
+This compose file was acquired from Plane Community Edition `v1.3.1`.
+The local `plane.env` uses ignored secret files created by `scripts/init-local-config.ps1` for database, RabbitMQ, MinIO, and app secret values.
 
 ## Access
 
