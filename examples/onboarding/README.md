@@ -66,7 +66,7 @@ docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
 
 Expected:
 
-- `dummy-api` is reachable at `http://localhost:8000/health`.
+- `dummy-api` is reachable at `http://localhost:18080/health`.
 - `dummy-job` exits `0`.
 - SigNoz shows services named `dummy-api` and `dummy-job`.
 
@@ -76,4 +76,32 @@ When a monitored project runs on another tailnet machine, set `OPS_BOARD_OTLP_EN
 
 ```powershell
 $env:OPS_BOARD_OTLP_ENDPOINT="http://<ops-board-tailscale-hostname>:4318"
+```
+
+## Verify In SigNoz
+
+After calling the API and running the job, open SigNoz:
+
+```text
+http://localhost:8080
+```
+
+Look for these service names:
+
+```text
+dummy-api
+dummy-job
+```
+
+Useful first checks:
+
+- Services view includes `dummy-api` after `/work/demo` is called.
+- Traces include spans named `dummy-api.work` and `dummy-api.expensive-lookup`.
+- Traces include spans named `dummy-job.run` and `dummy-job.process-record`.
+- Logs are present if OTLP log export is accepted by the collector.
+
+If the project runs on another tailnet machine, set:
+
+```dotenv
+OPS_BOARD_OTLP_ENDPOINT=http://<ops-board-tailscale-hostname>:4318
 ```

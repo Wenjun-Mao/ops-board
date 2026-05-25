@@ -1,0 +1,37 @@
+name: ops-board-onboarding
+
+services:
+  dummy-api:
+    build:
+      context: .
+      dockerfile: dummy-api/Dockerfile
+    container_name: ops-board-dummy-api
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${DUMMY_API_PORT:-18080}:8000"
+    environment:
+      OPS_BOARD_SERVICE_NAME: dummy-api
+      OPS_BOARD_SERVICE_NAMESPACE: ops-board.examples
+      OPS_BOARD_ENVIRONMENT: local
+      OPS_BOARD_OWNER: mk
+      OPS_BOARD_RUNTIME_HOST: docker
+      OPS_BOARD_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OPS_BOARD_HEALTH_URL: http://localhost:${DUMMY_API_PORT:-18080}/health
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  dummy-job:
+    build:
+      context: .
+      dockerfile: dummy-job/Dockerfile
+    container_name: ops-board-dummy-job
+    restart: "no"
+    environment:
+      OPS_BOARD_SERVICE_NAME: dummy-job
+      OPS_BOARD_SERVICE_NAMESPACE: ops-board.examples
+      OPS_BOARD_ENVIRONMENT: local
+      OPS_BOARD_OWNER: mk
+      OPS_BOARD_RUNTIME_HOST: docker
+      OPS_BOARD_OTLP_ENDPOINT: http://host.docker.internal:4318
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

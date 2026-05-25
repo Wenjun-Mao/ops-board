@@ -21,7 +21,7 @@ dependencies = [
 package = false
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = [".", "dummy-job", "dummy-api"]
 testpaths = [
   "tests",
   "dummy-job/tests",
