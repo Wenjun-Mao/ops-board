@@ -1,0 +1,16 @@
+service:
+  name: dummy-api
+  namespace: ops-board.examples
+  environment: local
+  owner: mk
+  version: 0.1.0
+
+runtime:
+  host: localhost
+  tailscale_host: localhost
+  provider: local
+  country: CA
+
+ops_board:
+  otlp_endpoint: http://localhost:4318
+  health_url: http://localhost:8000/health
