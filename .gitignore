@@ -38,6 +38,12 @@
 logs/
 **/logs/
 
+# Python local artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
 # OS/editor files
 .DS_Store
 Thumbs.db
