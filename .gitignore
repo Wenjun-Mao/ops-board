@@ -11,7 +11,11 @@
 /stacks/*/data/
 /stacks/*/runtime/
 /stacks/*/outputs/
+/stacks/homepage/config/custom.css
+/stacks/homepage/config/custom.js
+/stacks/homepage/config/docker.yaml
 /stacks/homepage/config/kubernetes.yaml
+/stacks/homepage/config/proxmox.yaml
 
 # Plane generated installer/runtime files
 /stacks/plane/plane-selfhost/

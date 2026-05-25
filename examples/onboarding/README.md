@@ -105,3 +105,27 @@ If the project runs on another tailnet machine, set:
 ```dotenv
 OPS_BOARD_OTLP_ENDPOINT=http://<ops-board-tailscale-hostname>:4318
 ```
+
+## Full Verification Checklist
+
+Run:
+
+```powershell
+uv run --project examples/onboarding pytest examples/onboarding/tests examples/onboarding/dummy-job/tests examples/onboarding/dummy-api/tests -v
+docker compose -f examples/onboarding/compose.yaml config --quiet
+docker compose -f examples/onboarding/compose.yaml build
+docker compose --env-file .env -f compose.yaml up -d
+docker compose -f examples/onboarding/compose.yaml up -d dummy-api
+Invoke-WebRequest -UseBasicParsing http://localhost:18080/health -TimeoutSec 20
+Invoke-WebRequest -UseBasicParsing http://localhost:18080/work/demo -TimeoutSec 20
+docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
+```
+
+Expected:
+
+- Tests pass.
+- Compose config validates.
+- Images build.
+- Dummy API health and work endpoints respond.
+- Dummy job exits successfully.
+- SigNoz receives telemetry for `dummy-api` and `dummy-job`.

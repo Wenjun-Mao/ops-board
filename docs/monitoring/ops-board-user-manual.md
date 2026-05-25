@@ -71,42 +71,33 @@ Homepage should link to:
 
 Use Homepage to confirm the board has links for the tools you expect.
 
-Screenshot target:
+![Homepage overview](images/homepage-overview.png)
 
-```text
-docs/monitoring/images/homepage-overview.png
-```
+The local first-run view may show an Uptime Kuma widget error until Uptime Kuma is initialized and its widget/API settings are configured.
 
 ### Uptime Kuma
 
 Use Uptime Kuma for health status and status page checks.
 
-Screenshot target:
+![Uptime Kuma first-run setup](images/uptime-kuma-first-run.png)
 
-```text
-docs/monitoring/images/uptime-kuma-dashboard.png
-```
+On a clean rebuild, Uptime Kuma starts at database selection and instance setup. After setup, create monitors for project health endpoints.
 
 ### SigNoz
 
 Use SigNoz for traces, logs, metrics, and service-level debugging.
 
-Screenshot targets:
+![SigNoz first-run setup](images/signoz-first-run.png)
 
-```text
-docs/monitoring/images/signoz-services.png
-docs/monitoring/images/signoz-traces.png
-```
+On a clean rebuild, SigNoz starts by creating the first admin account. After login, use the Services and Traces views to filter by `service.name`.
 
 ### Plane
 
 Use Plane after a monitoring finding becomes work that someone should track.
 
-Screenshot target:
+![Plane first-run setup](images/plane-first-run.png)
 
-```text
-docs/monitoring/images/plane-board.png
-```
+On a clean rebuild, Plane starts at workspace setup. After setup, create an Ops Board workspace or project for operational follow-up.
 
 ## Limits Of V1
 

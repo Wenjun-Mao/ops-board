@@ -146,9 +146,17 @@ http://localhost:18080/health
 http://localhost:18080/work/demo
 ```
 
+Expected local responses:
+
+![Dummy API health response](images/dummy-api-health.png)
+
+![Dummy API work response](images/dummy-api-work.png)
+
 Open SigNoz and look for:
 
 ```text
 dummy-api
 dummy-job
 ```
+
+On a clean rebuild, SigNoz may ask you to create the first admin account before you can inspect traces. The playground still emits telemetry while you finish that setup.
