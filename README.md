@@ -201,6 +201,16 @@ Backup and restore scripts are placeholders until stack-specific backup jobs are
 .\scripts\restore.ps1 -BackupPath <path>
 ```
 
+## Monitoring And Onboarding Docs
+
+Use these docs when operating the board or connecting projects to it:
+
+- `docs/monitoring/ops-board-user-manual.md` - how to use Ops Board day to day.
+- `docs/onboarding/human-guide.md` - why and how colleagues should onboard projects.
+- `docs/onboarding/onboarding-contract.md` - stable service identity and telemetry contract.
+- `docs/onboarding/codex-guide.md` - machine-friendly onboarding instructions for Codex sessions.
+- `examples/onboarding/README.md` - dummy API/job playground for testing the experience.
+
 ## Current Priorities
 
 1. Create the Uptime Kuma first admin account, status page, and monitors.
