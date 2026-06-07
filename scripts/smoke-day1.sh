@@ -73,11 +73,19 @@ test_http_endpoint() {
     return
   fi
 
-  local status_code
-  status_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time "$timeout_sec" "$uri" || true)"
-  if [[ ! "$status_code" =~ $accepted_regex ]]; then
-    ops_die "$name returned HTTP $status_code for $uri"
-  fi
+  local status_code=""
+  local deadline=$((SECONDS + timeout_sec))
+  while true; do
+    status_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time "$timeout_sec" "$uri" || true)"
+    if [[ "$status_code" =~ $accepted_regex ]]; then
+      break
+    fi
+
+    if (( SECONDS >= deadline )); then
+      ops_die "$name returned HTTP $status_code for $uri after ${timeout_sec}s"
+    fi
+    sleep 1
+  done
 
   printf '%s: HTTP %s\n' "$name" "$status_code"
 }

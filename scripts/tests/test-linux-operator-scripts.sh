@@ -159,10 +159,60 @@ test_smoke_supports_help_and_dry_run() {
   grep -Fq "bootstrap-uptime-kuma.sh" <<<"$output" || fail "smoke dry-run did not include Uptime Kuma bootstrap"
 }
 
+test_smoke_retries_transient_http_failures() {
+  local temp_repo
+  temp_repo="$(copy_repo_to_temp)"
+
+  local fake_bin="$temp_repo/fake-bin"
+  local fake_state="$temp_repo/fake-state"
+  mkdir -p "$fake_bin" "$fake_state"
+
+  cat > "$temp_repo/scripts/bootstrap-uptime-kuma.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'fake bootstrap\n'
+EOF
+  chmod +x "$temp_repo/scripts/bootstrap-uptime-kuma.sh"
+
+  cat > "$fake_bin/docker" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+  chmod +x "$fake_bin/docker"
+
+  cat > "$fake_bin/curl" <<'EOF'
+#!/usr/bin/env bash
+uri="${*: -1}"
+if [[ "$uri" == "http://localhost:3000" ]]; then
+  count_file="$OPS_BOARD_FAKE_CURL_STATE/homepage-count"
+  count="$(cat "$count_file" 2>/dev/null || printf '0')"
+  printf '%s\n' "$((count + 1))" > "$count_file"
+  if [[ "$count" -eq 0 ]]; then
+    printf '000'
+    exit 56
+  fi
+fi
+printf '200'
+EOF
+  chmod +x "$fake_bin/curl"
+
+  local output
+  if ! output="$(
+    cd "$temp_repo"
+    OPS_BOARD_FAKE_CURL_STATE="$fake_state" PATH="$fake_bin:$PATH" ./scripts/smoke-day1.sh --skip-onboarding --skip-telemetry-query --timeout-sec 2
+  )"; then
+    printf '%s\n' "$output"
+    fail "smoke did not retry a transient HTTP failure"
+  fi
+
+  grep -Fq "Homepage: HTTP 200" <<<"$output" || fail "smoke did not report Homepage success after retry"
+  [[ "$(cat "$fake_state/homepage-count")" -ge 2 ]] || fail "smoke did not retry Homepage check"
+}
+
 test_scripts_exist_and_parse
 test_init_local_config_generates_hp15_config
 test_init_local_config_keeps_and_rotates_secrets
 test_compose_wrappers_support_help_and_dry_run
 test_smoke_supports_help_and_dry_run
+test_smoke_retries_transient_http_failures
 
 printf 'Linux operator script tests passed.\n'
