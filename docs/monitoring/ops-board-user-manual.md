@@ -28,6 +28,21 @@ Homepage should link to:
 - Plane
 - Ops Board docs
 
+## Fresh Local Setup
+
+From a clean checkout or after an intentional reset:
+
+```powershell
+.\scripts\init-local-config.ps1
+docker compose --env-file .env -f compose.yaml up -d
+.\scripts\bootstrap-uptime-kuma.ps1
+.\scripts\smoke-day1.ps1 -SkipOnboarding
+```
+
+Use `.\scripts\init-local-config.ps1 -Force` only when intentionally recreating ignored local config and rotating local secrets.
+
+Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setup remain manual for v1; keep those credentials outside the repo.
+
 ## Which Tool To Use
 
 | Need | Use | Why |
@@ -65,6 +80,22 @@ Homepage should link to:
 | Plane | `http://localhost:8082` | `http://<host>:8082` |
 | OTLP HTTP | `http://localhost:4318` | `http://<host>:4318` |
 
+## Day-1 Acceptance Smoke
+
+Run the full smoke after the board is up:
+
+```powershell
+.\scripts\smoke-day1.ps1
+```
+
+The smoke verifies the board endpoints, the Uptime Kuma status page, the onboarding dummy API/job, and recent SigNoz telemetry for `dummy-api` and `dummy-job`.
+
+If you only need to check the board and skip the onboarding playground:
+
+```powershell
+.\scripts\smoke-day1.ps1 -SkipOnboarding
+```
+
 ## First Dashboards To Check
 
 ### Homepage
@@ -73,7 +104,7 @@ Use Homepage to confirm the board has links for the tools you expect.
 
 ![Homepage overview](images/homepage-overview.png)
 
-The local first-run view may show an Uptime Kuma widget error until Uptime Kuma is initialized and its widget/API settings are configured.
+After `.\scripts\bootstrap-uptime-kuma.ps1` runs, Homepage should link to the Uptime Kuma dashboard and may show the `ops-board` status widget if the widget API is reachable.
 
 ### Uptime Kuma
 
@@ -89,7 +120,7 @@ Use SigNoz for traces, logs, metrics, and service-level debugging.
 
 ![SigNoz first-run setup](images/signoz-first-run.png)
 
-On a clean rebuild, SigNoz starts by creating the first admin account. After login, use the Services and Traces views to filter by `service.name`.
+On a clean rebuild, SigNoz may show first admin setup or login. The Day-1 smoke does not need SigNoz UI credentials; it verifies telemetry by sending dummy API/job spans and querying ClickHouse.
 
 ### Plane
 
@@ -97,7 +128,7 @@ Use Plane after a monitoring finding becomes work that someone should track.
 
 ![Plane first-run setup](images/plane-first-run.png)
 
-On a clean rebuild, Plane starts at workspace setup. After setup, create an Ops Board workspace or project for operational follow-up.
+On a clean rebuild, Plane may show workspace setup or login. Create the Ops Board workspace manually when you are ready to track real operational follow-up; do not store Plane credentials in repo files.
 
 ## Limits Of V1
 
@@ -105,6 +136,7 @@ Ops Board v1 is good enough for pilot onboarding. It is not yet a fully automate
 
 Current manual steps:
 
-- Capture screenshots manually after UI login where needed.
-- Add project entries to Homepage manually.
+- Create SigNoz and Plane first admin/workspace accounts through their UIs.
+- Capture authenticated screenshots manually when the browser session matters.
+- Add real project entries to Homepage manually.
 - Use project docs to track ownership and runtime location.

@@ -18,6 +18,8 @@ Uptime Kuma is the v1 status source for endpoint health and status pages.
 
 Homepage remains the private launch board. It links to SigNoz, Uptime Kuma, Plane, Ops Board docs, and the onboarding playground. Homepage may show the Uptime Kuma status widget once the `ops-board` status page exists, but it should not become a parallel monitor configuration surface.
 
+Homepage should use browser-facing public URLs for links and container-reachable internal URLs for server-side widgets. For Uptime Kuma, that means the link can use `UPTIME_KUMA_PUBLIC_URL`, while the widget proxy should use `UPTIME_KUMA_INTERNAL_URL`.
+
 SigNoz remains the debugging and telemetry source. It is monitored by Uptime Kuma at both the UI health endpoint and the collector health endpoint.
 
 Healthchecks is deferred until scheduled-job monitoring in real projects proves that Uptime Kuma's push/HTTP monitor model is insufficient.

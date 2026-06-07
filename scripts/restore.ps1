@@ -32,6 +32,7 @@ $restoreItems = @(
     "access/tailscale.md",
     "scripts/README.md",
     "scripts/bootstrap-uptime-kuma.ps1",
+    "scripts/smoke-day1.ps1",
     "scripts/init-local-config.ps1",
     "scripts/status.ps1",
     "scripts/update-stack.ps1",

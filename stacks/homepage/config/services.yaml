@@ -3,11 +3,11 @@
         href: "{{HOMEPAGE_VAR_HOMEPAGE_URL}}"
         description: Private service directory
     - Uptime Kuma:
-        href: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
+        href: "{{HOMEPAGE_VAR_UPTIME_KUMA_PUBLIC_URL}}"
         description: Endpoint and status page monitoring
         widget:
           type: uptimekuma
-          url: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
+          url: "{{HOMEPAGE_VAR_UPTIME_KUMA_INTERNAL_URL}}"
           slug: "{{HOMEPAGE_VAR_UPTIME_KUMA_STATUS_SLUG}}"
     - SigNoz:
         href: "{{HOMEPAGE_VAR_SIGNOZ_URL}}"

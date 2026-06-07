@@ -1,15 +1,14 @@
 # Monitoring Images
 
-Prefer local screenshots captured from the running Ops Board stack.
+These screenshots support `docs/monitoring/ops-board-user-manual.md`.
 
-Planned captures:
+Capture them from the repo root after the board is running:
 
-- `homepage-overview.png`: Homepage landing view.
-- `uptime-kuma-first-run.png`: Uptime Kuma clean-instance setup view.
-- `signoz-first-run.png`: SigNoz clean-instance admin setup view.
-- `signoz-services.png`: SigNoz services view after login.
-- `signoz-traces.png`: SigNoz traces view after telemetry is received.
-- `plane-first-run.png`: Plane clean-instance setup view.
-- `plane-board.png`: Plane board after workspace setup.
+```powershell
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:3000 docs/monitoring/images/homepage-overview.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:3001/status/ops-board docs/monitoring/images/uptime-kuma-first-run.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:8080 docs/monitoring/images/signoz-first-run.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:8082 docs/monitoring/images/plane-first-run.png
+```
 
-If an external official visual is used, add the source URL and capture date beside the image reference in the manual that uses it.
+SigNoz and Plane screenshots may show setup, login, or dashboard states depending on whether the local runtime has been initialized. Do not commit screenshots that expose credentials, tokens, or private project data.

@@ -50,6 +50,36 @@ The script reads the username from `.env` and the password from `secrets/uptime_
 
 If Uptime Kuma is already initialized from a manual setup, the bootstrap cannot create a new first admin user. Set `UPTIME_KUMA_ADMIN_USERNAME` and `UPTIME_KUMA_ADMIN_PASSWORD_FILE` to match the existing local admin account, or reset the Uptime Kuma volume before using the first-run bootstrap path.
 
+## smoke-day1.ps1
+
+Runs the repeatable Day-1 acceptance smoke after the board is running:
+
+- validates the root Compose config
+- re-runs the idempotent Uptime Kuma bootstrap
+- checks Homepage, Uptime Kuma, the `ops-board` status page, SigNoz, the collector, and Plane
+- optionally starts the onboarding dummy API and dummy job
+- optionally checks recent SigNoz telemetry in ClickHouse
+
+Run the full smoke:
+
+```powershell
+.\scripts\smoke-day1.ps1
+```
+
+Run only the board checks:
+
+```powershell
+.\scripts\smoke-day1.ps1 -SkipOnboarding
+```
+
+Run the onboarding endpoints without querying ClickHouse:
+
+```powershell
+.\scripts\smoke-day1.ps1 -SkipTelemetryQuery
+```
+
+The script does not create SigNoz or Plane admin accounts. Those first-run account steps remain manual for v1.
+
 ## status.ps1
 
 Shows Docker Compose status for one stack. It includes completed one-shot services such as init and migration jobs, and defaults to the root Ops Board aggregator:
