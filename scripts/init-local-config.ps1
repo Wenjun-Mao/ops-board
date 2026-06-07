@@ -9,6 +9,7 @@ $envExample = Join-Path $repoRoot ".env.example"
 $envFile = Join-Path $repoRoot ".env"
 $secretsDir = Join-Path $repoRoot "secrets"
 $signozJwtSecretFile = Join-Path $secretsDir "signoz_jwt_secret"
+$uptimeKumaAdminPasswordFile = Join-Path $secretsDir "uptime_kuma_admin_password"
 $planeSecretKeyFile = Join-Path $secretsDir "plane_secret_key"
 $planePostgresPasswordFile = Join-Path $secretsDir "plane_postgres_password"
 $planeRabbitmqPasswordFile = Join-Path $secretsDir "plane_rabbitmq_password"
@@ -50,6 +51,7 @@ function Set-SecretFile {
 function Set-EnvValue {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [System.Collections.Generic.List[string]]$Lines,
 
         [Parameter(Mandatory = $true)]
@@ -136,6 +138,7 @@ else {
 New-Item -ItemType Directory -Force -Path $secretsDir | Out-Null
 
 Set-SecretFile -Path $signozJwtSecretFile -Label "secrets/signoz_jwt_secret"
+Set-SecretFile -Path $uptimeKumaAdminPasswordFile -Label "secrets/uptime_kuma_admin_password"
 Set-SecretFile -Path $planeSecretKeyFile -Label "secrets/plane_secret_key"
 Set-SecretFile -Path $planePostgresPasswordFile -Label "secrets/plane_postgres_password"
 Set-SecretFile -Path $planeRabbitmqPasswordFile -Label "secrets/plane_rabbitmq_password"

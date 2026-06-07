@@ -11,6 +11,9 @@ layout:
   Project Management:
     style: row
     columns: 3
+  Onboarding Playground:
+    style: row
+    columns: 3
   References:
     style: row
     columns: 3

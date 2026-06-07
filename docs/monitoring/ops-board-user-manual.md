@@ -77,11 +77,11 @@ The local first-run view may show an Uptime Kuma widget error until Uptime Kuma 
 
 ### Uptime Kuma
 
-Use Uptime Kuma for health status and status page checks.
+Use Uptime Kuma for health status and status page checks. It is the v1 status source for Ops Board.
 
 ![Uptime Kuma first-run setup](images/uptime-kuma-first-run.png)
 
-On a clean rebuild, Uptime Kuma starts at database selection and instance setup. After setup, create monitors for project health endpoints.
+On a clean rebuild, run `.\scripts\bootstrap-uptime-kuma.ps1` after the container starts. The script selects embedded MariaDB through Compose settings, creates the first local admin user from `secrets/uptime_kuma_admin_password` when needed, and applies the baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`.
 
 ### SigNoz
 
@@ -105,7 +105,6 @@ Ops Board v1 is good enough for pilot onboarding. It is not yet a fully automate
 
 Current manual steps:
 
-- Create Uptime Kuma monitors manually.
 - Capture screenshots manually after UI login where needed.
 - Add project entries to Homepage manually.
 - Use project docs to track ownership and runtime location.

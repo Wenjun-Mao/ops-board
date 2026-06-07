@@ -1,13 +1,13 @@
 - References:
-    - Ops Board GitHub:
+    - Ops Board Repository:
         - href: https://github.com/Wenjun-Mao/ops-board
-          description: Repository
+          description: Source, docs, and stack configuration
     - SigNoz Docs:
         - href: https://signoz.io/docs/
           description: Observability docs
-    - Uptime Kuma:
-        - href: https://github.com/louislam/uptime-kuma
-          description: Monitoring project
+    - Uptime Kuma Docs:
+        - href: https://github.com/louislam/uptime-kuma/wiki
+          description: Monitor and status page docs
     - Homepage Docs:
         - href: https://gethomepage.dev/
           description: Dashboard docs

@@ -7,6 +7,10 @@ services:
     restart: unless-stopped
     ports:
       - "0.0.0.0:${UPTIME_KUMA_PORT:-3001}:3001"
+    environment:
+      UPTIME_KUMA_DB_TYPE: ${UPTIME_KUMA_DB_TYPE:-embedded-mariadb}
+      UPTIME_KUMA_ENABLE_EMBEDDED_MARIADB: ${UPTIME_KUMA_ENABLE_EMBEDDED_MARIADB:-1}
+      UPTIME_KUMA_IN_CONTAINER: "1"
     volumes:
       - uptime-kuma-data:/app/data
     extra_hosts:

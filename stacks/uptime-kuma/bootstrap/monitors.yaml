@@ -1,0 +1,30 @@
+status_page:
+  slug: ops-board
+  title: Ops Board
+
+monitors:
+  - name: Homepage
+    type: http
+    url: http://host.docker.internal:3000
+    accepted_statuscodes: ["200-299"]
+  - name: Uptime Kuma
+    type: http
+    url: http://host.docker.internal:3001
+    accepted_statuscodes: ["200-399"]
+  - name: SigNoz UI
+    type: http
+    url: http://host.docker.internal:8080/api/v1/health
+    accepted_statuscodes: ["200-299"]
+  - name: SigNoz Collector
+    type: http
+    url: http://host.docker.internal:13133/
+    accepted_statuscodes: ["200-299"]
+  - name: Plane
+    type: http
+    url: http://host.docker.internal:8082
+    accepted_statuscodes: ["200-399"]
+  - name: Dummy API Health
+    type: http
+    url: http://host.docker.internal:18080/health
+    accepted_statuscodes: ["200-299"]
+    optional: true

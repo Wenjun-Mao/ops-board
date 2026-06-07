@@ -1,20 +1,29 @@
 - Observability:
-    - SigNoz:
-        href: "{{HOMEPAGE_VAR_SIGNOZ_URL}}"
-        description: Logs, traces, metrics, and OTLP ingestion
-        ping: "{{HOMEPAGE_VAR_SIGNOZ_URL}}/api/v1/health"
+    - Homepage:
+        href: "{{HOMEPAGE_VAR_HOMEPAGE_URL}}"
+        description: Private service directory
     - Uptime Kuma:
         href: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
-        description: Endpoint and uptime monitoring
+        description: Endpoint and status page monitoring
         widget:
           type: uptimekuma
           url: "{{HOMEPAGE_VAR_UPTIME_KUMA_URL}}"
           slug: "{{HOMEPAGE_VAR_UPTIME_KUMA_STATUS_SLUG}}"
-    - Homepage:
-        href: "{{HOMEPAGE_VAR_HOMEPAGE_URL}}"
-        description: Private service directory
+    - SigNoz:
+        href: "{{HOMEPAGE_VAR_SIGNOZ_URL}}"
+        description: Logs, traces, metrics, and OTLP ingestion
+        ping: "{{HOMEPAGE_VAR_SIGNOZ_URL}}/api/v1/health"
 
 - Project Management:
     - Plane:
         href: "{{HOMEPAGE_VAR_PLANE_URL}}"
-        description: Project and kanban management
+        description: Operational follow-up and project work
+
+- Onboarding Playground:
+    - Dummy API:
+        href: "{{HOMEPAGE_VAR_DUMMY_API_URL}}"
+        description: Sample FastAPI service for health and trace checks
+        ping: "{{HOMEPAGE_VAR_DUMMY_API_URL}}/health"
+    - Ops Board Docs:
+        href: "https://github.com/Wenjun-Mao/ops-board/tree/main/docs"
+        description: Monitoring and onboarding guides

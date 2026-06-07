@@ -14,6 +14,7 @@ Creates local runtime config that must not be committed:
 - `secrets/plane_postgres_password`
 - `secrets/plane_rabbitmq_password`
 - `secrets/plane_minio_password`
+- `secrets/uptime_kuma_admin_password`
 - `stacks/plane/plane.env`
 
 Use it after cloning the repo, before starting a stack for the first time:
@@ -29,6 +30,25 @@ Use `-Force` only when you intentionally want to overwrite `.env` from `.env.exa
 ```
 
 Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets with `-Force` recreates `stacks/plane/plane.env`; recreate affected containers after rotation.
+
+## bootstrap-uptime-kuma.ps1
+
+Bootstraps Uptime Kuma after the container is running:
+
+- creates the first local admin user when setup is needed
+- logs in through Uptime Kuma's Socket.IO app contract
+- creates missing baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`
+- creates or updates the `ops-board` status page
+
+Run:
+
+```powershell
+.\scripts\bootstrap-uptime-kuma.ps1
+```
+
+The script reads the username from `.env` and the password from `secrets/uptime_kuma_admin_password`. It never prints the password.
+
+If Uptime Kuma is already initialized from a manual setup, the bootstrap cannot create a new first admin user. Set `UPTIME_KUMA_ADMIN_USERNAME` and `UPTIME_KUMA_ADMIN_PASSWORD_FILE` to match the existing local admin account, or reset the Uptime Kuma volume before using the first-run bootstrap path.
 
 ## status.ps1
 
@@ -88,23 +108,47 @@ Update a specific stack:
 
 ## backup.ps1
 
-Creates the backup root directory and prints the current backup status:
+Creates a timestamped zip containing non-secret Ops Board config and docs:
+
+- `.env.example`
+- root `compose.yaml`
+- stack Compose files
+- Homepage YAML config
+- Uptime Kuma monitor docs and bootstrap config
+- Plane env example
+- repo docs
+- repo scripts
 
 ```powershell
 .\scripts\backup.ps1
 ```
 
-This is currently a placeholder. It does not yet export SigNoz, ClickHouse, or other stack data.
+Use a custom local backup root:
+
+```powershell
+.\scripts\backup.ps1 -BackupRoot D:\ops-board-backups
+```
+
+The backup intentionally excludes `.env`, `secrets/*`, `stacks/plane/plane.env`, Docker volumes, and generated runtime data.
 
 ## restore.ps1
 
-Validates that a restore source path exists and prints the current restore status:
+Restores allowlisted non-secret config and docs from a zip created by `backup.ps1`.
+
+Smoke-test a restore into `temp/restore-smoke` without touching the repo root:
 
 ```powershell
-.\scripts\restore.ps1 -BackupPath <path>
+$latest = Get-ChildItem D:\ops-board-backups -Filter "ops-board-config-*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+.\scripts\restore.ps1 -BackupPath $latest.FullName -TargetRoot temp\restore-smoke -Force
 ```
 
-This is currently a placeholder. It does not yet restore SigNoz, ClickHouse, or other stack data.
+Restore into the repo root only when you intentionally want to overwrite allowlisted files:
+
+```powershell
+.\scripts\restore.ps1 -BackupPath <path-to-ops-board-config.zip> -Force
+```
+
+The restore script does not restore local secret files or Docker volume data.
 
 ## Direct Docker Compose Commands
 
