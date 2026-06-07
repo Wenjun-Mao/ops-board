@@ -2,9 +2,13 @@
 
 These scripts are repo-level helpers for local operations. Run them from any working directory; each script resolves the repo root from its own path.
 
-All stack-aware scripts look for root `compose.yaml` when `-Stack ops-board` is used. `ops-board` is the default. Individual stack names still resolve to `stacks/<stack>/compose.yaml` for isolated maintenance.
+Linux is the default operator path. The old `*.ps1` scripts remain for compatibility during the transition, but use the `*.sh` scripts for normal deployment and HP-15 validation.
 
-## init-local-config.ps1
+All stack-aware scripts look for root `compose.yaml` when `--stack ops-board` is used. `ops-board` is the default. Individual stack names still resolve to `stacks/<stack>/compose.yaml` for isolated maintenance.
+
+Use the Tailscale/MagicDNS hostname in `.env` for browser-facing URLs. On `HP-15`, that means URLs such as `http://hp-15:3000` and `http://hp-15:8080`. Use `localhost` only from a shell or browser running directly on the deployment host.
+
+## init-local-config.sh
 
 Creates local runtime config that must not be committed:
 
@@ -19,19 +23,19 @@ Creates local runtime config that must not be committed:
 
 Use it after cloning the repo, before starting a stack for the first time:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 ```
 
-Use `-Force` only when you intentionally want to overwrite `.env` from `.env.example` and rotate local stack secrets:
+Use `--force` only when you intentionally want to overwrite `.env` from `.env.example` and rotate local stack secrets:
 
-```powershell
-.\scripts\init-local-config.ps1 -Force
+```bash
+./scripts/init-local-config.sh --host hp-15 --force
 ```
 
-Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets with `-Force` recreates `stacks/plane/plane.env`; recreate affected containers after rotation.
+Rotating `secrets/signoz_jwt_secret` can invalidate existing SigNoz tokens or sessions. Rotating Plane secrets with `--force` recreates `stacks/plane/plane.env`; recreate affected containers after rotation.
 
-## bootstrap-uptime-kuma.ps1
+## bootstrap-uptime-kuma.sh
 
 Bootstraps Uptime Kuma after the container is running:
 
@@ -42,15 +46,15 @@ Bootstraps Uptime Kuma after the container is running:
 
 Run:
 
-```powershell
-.\scripts\bootstrap-uptime-kuma.ps1
+```bash
+./scripts/bootstrap-uptime-kuma.sh
 ```
 
 The script reads the username from `.env` and the password from `secrets/uptime_kuma_admin_password`. It never prints the password.
 
 If Uptime Kuma is already initialized from a manual setup, the bootstrap cannot create a new first admin user. Set `UPTIME_KUMA_ADMIN_USERNAME` and `UPTIME_KUMA_ADMIN_PASSWORD_FILE` to match the existing local admin account, or reset the Uptime Kuma volume before using the first-run bootstrap path.
 
-## smoke-day1.ps1
+## smoke-day1.sh
 
 Runs the repeatable Day-1 acceptance smoke after the board is running:
 
@@ -62,36 +66,36 @@ Runs the repeatable Day-1 acceptance smoke after the board is running:
 
 Run the full smoke:
 
-```powershell
-.\scripts\smoke-day1.ps1
+```bash
+./scripts/smoke-day1.sh
 ```
 
 Run only the board checks:
 
-```powershell
-.\scripts\smoke-day1.ps1 -SkipOnboarding
+```bash
+./scripts/smoke-day1.sh --skip-onboarding
 ```
 
 Run the onboarding endpoints without querying ClickHouse:
 
-```powershell
-.\scripts\smoke-day1.ps1 -SkipTelemetryQuery
+```bash
+./scripts/smoke-day1.sh --skip-telemetry-query
 ```
 
 The script does not create SigNoz or Plane admin accounts. Those first-run account steps remain manual for v1.
 
-## status.ps1
+## status.sh
 
 Shows Docker Compose status for one stack. It includes completed one-shot services such as init and migration jobs, and defaults to the root Ops Board aggregator:
 
-```powershell
-.\scripts\status.ps1
+```bash
+./scripts/status.sh
 ```
 
-Use `-Stack` for isolated stack maintenance:
+Use `--stack` for isolated stack maintenance:
 
-```powershell
-.\scripts\status.ps1 -Stack uptime-kuma
+```bash
+./scripts/status.sh --stack uptime-kuma
 ```
 
 The script includes the root `.env` file automatically when it exists. It also includes stack-local env files when present:
@@ -101,26 +105,26 @@ The script includes the root `.env` file automatically when it exists. It also i
 
 Common stack names:
 
-```powershell
-.\scripts\status.ps1 -Stack ops-board
-.\scripts\status.ps1 -Stack signoz
-.\scripts\status.ps1 -Stack uptime-kuma
-.\scripts\status.ps1 -Stack homepage
-.\scripts\status.ps1 -Stack plane
+```bash
+./scripts/status.sh --stack ops-board
+./scripts/status.sh --stack signoz
+./scripts/status.sh --stack uptime-kuma
+./scripts/status.sh --stack homepage
+./scripts/status.sh --stack plane
 ```
 
-## update-stack.ps1
+## update-stack.sh
 
 Pulls images for a stack and runs `docker compose up -d`. It defaults to the root Ops Board aggregator:
 
-```powershell
-.\scripts\update-stack.ps1
+```bash
+./scripts/update-stack.sh
 ```
 
-Use `-RemoveOrphans` only when you deliberately want Compose to remove containers that are no longer present in the compose file:
+Use `--remove-orphans` only when you deliberately want Compose to remove containers that are no longer present in the compose file:
 
-```powershell
-.\scripts\update-stack.ps1 -Stack signoz -RemoveOrphans
+```bash
+./scripts/update-stack.sh --stack signoz --remove-orphans
 ```
 
 For stateful stacks, check the stack README before using this during a version upgrade.
@@ -129,11 +133,11 @@ The script includes the root `.env` file first, then stack-local env files when 
 
 Update a specific stack:
 
-```powershell
-.\scripts\update-stack.ps1 -Stack ops-board
-.\scripts\update-stack.ps1 -Stack uptime-kuma
-.\scripts\update-stack.ps1 -Stack homepage
-.\scripts\update-stack.ps1 -Stack plane
+```bash
+./scripts/update-stack.sh --stack ops-board
+./scripts/update-stack.sh --stack uptime-kuma
+./scripts/update-stack.sh --stack homepage
+./scripts/update-stack.sh --stack plane
 ```
 
 ## backup.ps1
@@ -161,6 +165,8 @@ Use a custom local backup root:
 
 The backup intentionally excludes `.env`, `secrets/*`, `stacks/plane/plane.env`, Docker volumes, and generated runtime data.
 
+Restore reads the backup manifest and restores only entries that are still in the current allowlist. This keeps older config backups usable while still rejecting unsupported archive contents.
+
 ## restore.ps1
 
 Restores allowlisted non-secret config and docs from a zip created by `backup.ps1`.
@@ -184,24 +190,38 @@ The restore script does not restore local secret files or Docker volume data.
 
 Start Ops Board:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml up -d
 ```
 
 Start an individual stack outside the root aggregator:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
 ```
 
 Stop Ops Board while preserving volumes:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml down
 ```
 
 Reset Ops Board and wipe named volumes:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml down -v
 ```
+
+## PowerShell Compatibility
+
+The transition PowerShell scripts mirror the older Windows workflow:
+
+```powershell
+.\scripts\init-local-config.ps1
+.\scripts\bootstrap-uptime-kuma.ps1
+.\scripts\smoke-day1.ps1
+.\scripts\status.ps1
+.\scripts\update-stack.ps1
+```
+
+Prefer the Linux scripts for new operator docs, examples, and deployment runs.

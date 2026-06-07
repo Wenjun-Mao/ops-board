@@ -49,10 +49,18 @@ For local testing, the OTLP endpoint is:
 http://localhost:4318
 ```
 
+Use this only from code running directly on the Ops Board host.
+
 For a remote tailnet machine, use:
 
 ```text
 http://<ops-board-tailscale-hostname>:4318
+```
+
+For the HP-15 deployment, use:
+
+```text
+http://hp-15:4318
 ```
 
 ## Python Script Or Scheduled Job
@@ -134,7 +142,7 @@ The docs say where the project runs.
 
 Use the local playground before onboarding a real project:
 
-```powershell
+```bash
 docker compose -f examples/onboarding/compose.yaml up --build -d dummy-api
 docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
 ```

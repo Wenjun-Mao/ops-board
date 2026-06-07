@@ -29,19 +29,19 @@ otlp_endpoint
 health_url
 ```
 
-Use `http://<ops-board-tailscale-hostname>:4318` for remote machines connected through Tailscale.
+Use `http://<ops-board-tailscale-hostname>:4318` for remote machines connected through Tailscale. For the HP-15 deployment, use `http://hp-15:4318`.
 
 ## Python App Changes
 
 If the target is Python, add dependencies using `uv`:
 
-```powershell
+```bash
 uv add pydantic-settings pyyaml opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-http tenacity
 ```
 
 If it is a FastAPI app, also ensure:
 
-```powershell
+```bash
 uv add fastapi uvicorn
 ```
 
@@ -131,20 +131,20 @@ environment:
 
 Run project tests:
 
-```powershell
+```bash
 uv run pytest -v
 ```
 
 Verify health endpoint:
 
-```powershell
-Invoke-WebRequest -UseBasicParsing <health-url> -TimeoutSec 20
+```bash
+curl -fsS --max-time 20 <health-url>
 ```
 
 Verify Ops Board collector from the target host:
 
-```powershell
-Invoke-WebRequest -UseBasicParsing http://<ops-board-host>:13133/ -TimeoutSec 20
+```bash
+curl -fsS --max-time 20 http://<ops-board-host>:13133/
 ```
 
 Run one request or one job execution, then check SigNoz for:

@@ -6,8 +6,8 @@ The code-backed source of truth is `stacks/uptime-kuma/bootstrap/monitors.yaml`.
 
 Run the bootstrap after Uptime Kuma is running:
 
-```powershell
-.\scripts\bootstrap-uptime-kuma.ps1
+```bash
+./scripts/bootstrap-uptime-kuma.sh
 ```
 
 The script creates the first local admin user when setup is needed, creates any missing baseline monitors, and creates or updates the `ops-board` status page. It is safe to re-run.
@@ -49,5 +49,5 @@ If the dummy API is stopped, pause the monitor instead of treating the red statu
 
 - Use monitor names exactly as listed so screenshots, docs, and future automation refer to the same labels.
 - Keep the `ops-board` status page slug; Homepage's Uptime Kuma widget reads this slug.
-- Add or change baseline monitors in `stacks/uptime-kuma/bootstrap/monitors.yaml`, then re-run `.\scripts\bootstrap-uptime-kuma.ps1`.
+- Add or change baseline monitors in `stacks/uptime-kuma/bootstrap/monitors.yaml`, then re-run `./scripts/bootstrap-uptime-kuma.sh`.
 - Do not add Healthchecks for v1. Revisit that only after a real scheduled-job pilot shows Uptime Kuma is not enough.

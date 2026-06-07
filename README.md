@@ -32,9 +32,20 @@ ops-board/
 
   scripts/
     README.md
+    bootstrap-uptime-kuma.sh
+    init-local-config.sh
+    smoke-day1.sh
+    status.sh
+    update-stack.sh
+    lib/
+      ops-board.sh
+    tests/
+      test-linux-operator-scripts.sh
     backup.ps1
+    bootstrap-uptime-kuma.ps1
     init-local-config.ps1
     restore.ps1
+    smoke-day1.ps1
     status.ps1
     update-stack.ps1
 
@@ -71,10 +82,10 @@ ops-board/
 
 ## Quick Start
 
-Create local config and Docker secret files:
+Linux is the default operator environment. On `HP-15`, use the Tailscale/MagicDNS hostname in generated browser-facing URLs:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 ```
 
 This creates ignored local files:
@@ -85,32 +96,40 @@ This creates ignored local files:
 - `secrets/plane_postgres_password`
 - `secrets/plane_rabbitmq_password`
 - `secrets/plane_minio_password`
+- `secrets/uptime_kuma_admin_password`
 
 This also creates the ignored `stacks/plane/plane.env` file when it is missing.
 
 Start Ops Board:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml up -d
 ```
 
-Open the SigNoz UI:
+Bootstrap Uptime Kuma, then run the board smoke:
 
-```text
-http://localhost:8080
+```bash
+./scripts/bootstrap-uptime-kuma.sh
+./scripts/smoke-day1.sh --skip-onboarding
 ```
 
-If this host is joined to Tailscale, use the host's MagicDNS name from other tailnet devices:
+Open Homepage:
 
 ```text
-http://<tailscale-hostname>:8080
+http://hp-15:3000
+```
+
+Use `localhost` only from a shell or browser running directly on the deployment host. From other tailnet devices, use the host's MagicDNS name:
+
+```text
+http://<tailscale-hostname>:3000
 ```
 
 ## Clean Rebuild From Separate Projects
 
 During this development phase, it is safe to wipe local stack data and rebuild under the root `ops-board` project:
 
-```powershell
+```bash
 docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml down -v
 docker compose --env-file .env -f stacks/homepage/compose.yaml down -v
 docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml down -v
@@ -126,7 +145,7 @@ Tailscale is the private network boundary for now.
 
 - Do not add Caddy, Traefik, or nginx yet.
 - Keep stack ports bound explicitly for local and tailnet access.
-- Use Tailscale MagicDNS names in docs and future dashboards.
+- Use Tailscale MagicDNS names in docs, `.env`, Plane URLs, Homepage links, and future dashboards.
 
 See `access/tailscale.md` for endpoint conventions.
 
@@ -140,6 +159,12 @@ The SigNoz stack currently uses one Docker secret:
 secrets/signoz_jwt_secret
 ```
 
+Uptime Kuma uses one local admin secret for its code-backed first-run bootstrap:
+
+```text
+secrets/uptime_kuma_admin_password
+```
+
 Plane uses ignored secret material to populate its stack-local `stacks/plane/plane.env` file:
 
 ```text
@@ -149,7 +174,7 @@ secrets/plane_rabbitmq_password
 secrets/plane_minio_password
 ```
 
-Both `.env` and secret files are ignored by Git. Regenerate them with `.\scripts\init-local-config.ps1 -Force` only when you intentionally want to overwrite local settings and rotate local stack secrets.
+Both `.env` and secret files are ignored by Git. Regenerate them with `./scripts/init-local-config.sh --host hp-15 --force` only when you intentionally want to overwrite local settings and rotate local stack secrets.
 
 ## Stack Commands
 
@@ -157,29 +182,29 @@ See `scripts/README.md` for the full script reference.
 
 Show Ops Board status:
 
-```powershell
-.\scripts\status.ps1
+```bash
+./scripts/status.sh
 ```
 
 Use individual stack names only when intentionally operating a stack outside the root aggregator:
 
-```powershell
-.\scripts\status.ps1 -Stack signoz
-.\scripts\status.ps1 -Stack uptime-kuma
-.\scripts\status.ps1 -Stack homepage
-.\scripts\status.ps1 -Stack plane
+```bash
+./scripts/status.sh --stack signoz
+./scripts/status.sh --stack uptime-kuma
+./scripts/status.sh --stack homepage
+./scripts/status.sh --stack plane
 ```
 
 Update Ops Board:
 
-```powershell
-.\scripts\update-stack.ps1
+```bash
+./scripts/update-stack.sh
 ```
 
 Remove orphaned containers during an update only when you intentionally want cleanup:
 
-```powershell
-.\scripts\update-stack.ps1 -RemoveOrphans
+```bash
+./scripts/update-stack.sh --remove-orphans
 ```
 
 Stop Ops Board while preserving volumes:
@@ -194,12 +219,14 @@ Reset Ops Board and wipe its named volumes:
 docker compose --env-file .env -f compose.yaml down -v
 ```
 
-Backup and restore scripts are placeholders until stack-specific backup jobs are defined:
+Config backup and restore scripts protect allowlisted non-secret repo config and docs. Stack data backup jobs are still future work:
 
 ```powershell
 .\scripts\backup.ps1
 .\scripts\restore.ps1 -BackupPath <path>
 ```
+
+The old `*.ps1` operator scripts remain for compatibility during the transition, but Linux `*.sh` scripts are the default operator path.
 
 ## Monitoring And Onboarding Docs
 
@@ -213,7 +240,7 @@ Use these docs when operating the board or connecting projects to it:
 
 ## Current Priorities
 
-1. Create the Uptime Kuma first admin account, status page, and monitors.
+1. Validate the Linux-first workflow on `HP-15`.
 2. Finish stack-specific backup and restore jobs.
 3. Decide whether Healthchecks adds value beyond Uptime Kuma.
 4. Revisit a reverse proxy only after Tailscale-first access feels limiting.

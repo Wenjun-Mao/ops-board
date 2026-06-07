@@ -17,9 +17,11 @@ Tailscale is the access layer for v1. Do not expose dashboards publicly unless t
 Start with Homepage:
 
 ```text
-http://localhost:3000
+http://hp-15:3000
 http://<ops-board-tailscale-hostname>:3000
 ```
+
+Use `localhost` only from a shell or browser running directly on the deployment host.
 
 Homepage should link to:
 
@@ -32,14 +34,14 @@ Homepage should link to:
 
 From a clean checkout or after an intentional reset:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 docker compose --env-file .env -f compose.yaml up -d
-.\scripts\bootstrap-uptime-kuma.ps1
-.\scripts\smoke-day1.ps1 -SkipOnboarding
+./scripts/bootstrap-uptime-kuma.sh
+./scripts/smoke-day1.sh --skip-onboarding
 ```
 
-Use `.\scripts\init-local-config.ps1 -Force` only when intentionally recreating ignored local config and rotating local secrets.
+Use `./scripts/init-local-config.sh --host hp-15 --force` only when intentionally recreating ignored local config and rotating local secrets.
 
 Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setup remain manual for v1; keep those credentials outside the repo.
 
@@ -80,23 +82,27 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 | Plane | `http://localhost:8082` | `http://<host>:8082` |
 | OTLP HTTP | `http://localhost:4318` | `http://<host>:4318` |
 
+Use the Tailscale/MagicDNS hostname in `.env` for browser-facing URLs. On `HP-15`, use URLs such as `http://hp-15:3000` and `http://hp-15:8080`.
+
 ## Day-1 Acceptance Smoke
 
 Run the full smoke after the board is up:
 
-```powershell
-.\scripts\smoke-day1.ps1
+```bash
+./scripts/smoke-day1.sh
 ```
 
 The smoke verifies the board endpoints, the Uptime Kuma status page, the onboarding dummy API/job, and recent SigNoz telemetry for `dummy-api` and `dummy-job`.
 
 If you only need to check the board and skip the onboarding playground:
 
-```powershell
-.\scripts\smoke-day1.ps1 -SkipOnboarding
+```bash
+./scripts/smoke-day1.sh --skip-onboarding
 ```
 
 ## First Dashboards To Check
+
+The committed screenshots are reference UI states. Do not recapture them solely because the runtime host changes; refresh them only when the UI state or documented workflow changes.
 
 ### Homepage
 
@@ -104,7 +110,7 @@ Use Homepage to confirm the board has links for the tools you expect.
 
 ![Homepage overview](images/homepage-overview.png)
 
-After `.\scripts\bootstrap-uptime-kuma.ps1` runs, Homepage should link to the Uptime Kuma dashboard and may show the `ops-board` status widget if the widget API is reachable.
+After `./scripts/bootstrap-uptime-kuma.sh` runs, Homepage should link to the Uptime Kuma dashboard and may show the `ops-board` status widget if the widget API is reachable.
 
 ### Uptime Kuma
 
@@ -112,7 +118,7 @@ Use Uptime Kuma for health status and status page checks. It is the v1 status so
 
 ![Uptime Kuma first-run setup](images/uptime-kuma-first-run.png)
 
-On a clean rebuild, run `.\scripts\bootstrap-uptime-kuma.ps1` after the container starts. The script selects embedded MariaDB through Compose settings, creates the first local admin user from `secrets/uptime_kuma_admin_password` when needed, and applies the baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`.
+On a clean rebuild, run `./scripts/bootstrap-uptime-kuma.sh` after the container starts. The script selects embedded MariaDB through Compose settings, creates the first local admin user from `secrets/uptime_kuma_admin_password` when needed, and applies the baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`.
 
 ### SigNoz
 
