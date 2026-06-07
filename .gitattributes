@@ -1,0 +1,4 @@
+.gitattributes text eol=lf
+*.sh text eol=lf
+scripts/lib/*.sh text eol=lf
+scripts/tests/*.sh text eol=lf
