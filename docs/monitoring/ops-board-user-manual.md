@@ -122,6 +122,10 @@ Use SigNoz for traces, logs, metrics, and service-level debugging.
 
 On a clean rebuild, SigNoz may show first admin setup or login. The Day-1 smoke does not need SigNoz UI credentials; it verifies telemetry by sending dummy API/job spans and querying ClickHouse.
 
+After local admin setup, the SigNoz home dashboard should show active log, trace, and metric ingestion. After the smoke runs, the services table should include the onboarding services, such as `dummy-api` and `dummy-job`.
+
+![SigNoz home after login](images/signoz-home.png)
+
 ### Plane
 
 Use Plane after a monitoring finding becomes work that someone should track.
@@ -130,6 +134,10 @@ Use Plane after a monitoring finding becomes work that someone should track.
 
 On a clean rebuild, Plane may show workspace setup or login. Create the Ops Board workspace manually when you are ready to track real operational follow-up; do not store Plane credentials in repo files.
 
+After local workspace setup, the `Ops Board` workspace home is the normal starting point for follow-up work.
+
+![Plane workspace after login](images/plane-workspace.png)
+
 ## Limits Of V1
 
 Ops Board v1 is good enough for pilot onboarding. It is not yet a fully automated monitoring platform.
@@ -137,6 +145,5 @@ Ops Board v1 is good enough for pilot onboarding. It is not yet a fully automate
 Current manual steps:
 
 - Create SigNoz and Plane first admin/workspace accounts through their UIs.
-- Capture authenticated screenshots manually when the browser session matters.
 - Add real project entries to Homepage manually.
 - Use project docs to track ownership and runtime location.
