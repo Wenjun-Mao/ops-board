@@ -26,11 +26,19 @@ else {
 }
 
 $restoreItems = @(
+    ".gitattributes",
     ".env.example",
     "compose.yaml",
     "README.md",
     "access/tailscale.md",
     "scripts/README.md",
+    "scripts/lib/ops-board.sh",
+    "scripts/init-local-config.sh",
+    "scripts/bootstrap-uptime-kuma.sh",
+    "scripts/status.sh",
+    "scripts/update-stack.sh",
+    "scripts/smoke-day1.sh",
+    "scripts/tests/test-linux-operator-scripts.sh",
     "scripts/bootstrap-uptime-kuma.ps1",
     "scripts/smoke-day1.ps1",
     "scripts/init-local-config.ps1",
@@ -93,7 +101,16 @@ try {
         throw "Backup archive is missing _manifest.txt"
     }
 
+    $allowedItems = @{}
     foreach ($item in $restoreItems) {
+        $allowedItems[$item] = $true
+    }
+
+    $manifestItems = Get-Content -LiteralPath $manifestPath | Where-Object { $_ -and $_.Trim() -ne "" }
+    foreach ($item in $manifestItems) {
+        if (-not $allowedItems.ContainsKey($item)) {
+            throw "Backup archive contains an unsupported manifest item: $item"
+        }
         Restore-AllowedItem -RelativePath $item -SourceRoot $stagingRoot -DestinationRoot $targetRootPath
     }
 

@@ -11,11 +11,19 @@ $stagingRoot = Join-Path ([System.IO.Path]::GetTempPath()) $backupName
 $archivePath = Join-Path $BackupRoot "$backupName.zip"
 
 $backupItems = @(
+    ".gitattributes",
     ".env.example",
     "compose.yaml",
     "README.md",
     "access/tailscale.md",
     "scripts/README.md",
+    "scripts/lib/ops-board.sh",
+    "scripts/init-local-config.sh",
+    "scripts/bootstrap-uptime-kuma.sh",
+    "scripts/status.sh",
+    "scripts/update-stack.sh",
+    "scripts/smoke-day1.sh",
+    "scripts/tests/test-linux-operator-scripts.sh",
     "scripts/bootstrap-uptime-kuma.ps1",
     "scripts/smoke-day1.ps1",
     "scripts/init-local-config.ps1",
