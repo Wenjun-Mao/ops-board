@@ -30,5 +30,5 @@ Committed screenshots remain reference screenshots for stable UI expectations. T
 
 - Do not store deployment secrets in tracked files.
 - Keep `.env` and generated stack env files ignored.
-- Validate Linux scripts on `HP-15` before calling the migration complete.
+- Keep Linux script validation on `HP-15` as the acceptance check for workflow changes.
 - Keep Day-1 smoke as the acceptance gate for the board runtime.

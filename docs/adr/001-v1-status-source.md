@@ -26,7 +26,7 @@ Healthchecks is deferred until scheduled-job monitoring in real projects proves 
 
 ## Consequences
 
-- Uptime Kuma monitor setup is documented as a day-1 required step.
+- Uptime Kuma monitor setup is code-backed through `stacks/uptime-kuma/bootstrap/monitors.yaml`, with manual monitor docs kept as a fallback.
 - Homepage cleanup should favor clear links and a single Uptime Kuma widget over duplicate direct status widgets.
 - New project onboarding should first add an endpoint/job signal to Uptime Kuma and telemetry to SigNoz before adding more tooling.
 - Local Uptime Kuma data becomes valuable after first-run setup; avoid `docker compose down -v` unless intentionally resetting the board.
