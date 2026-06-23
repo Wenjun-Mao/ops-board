@@ -21,7 +21,7 @@ Use Plane's official setup flow, or the equivalent official release assets, to a
 - keep `plane.env.example` sanitized and committed
 
 This compose file was acquired from Plane Community Edition `v1.3.1`.
-The local `plane.env` uses ignored secret files created by `scripts/init-local-config.ps1` for database, RabbitMQ, MinIO, and app secret values.
+The local `plane.env` uses ignored secret files created by `scripts/init-local-config.sh` for database, RabbitMQ, MinIO, and app secret values.
 
 ## Access
 
@@ -41,18 +41,18 @@ http://<tailscale-hostname>:8082
 
 Show status:
 
-```powershell
-.\scripts\status.ps1 -Stack plane
+```bash
+./scripts/status.sh --stack plane
 ```
 
 Start after `compose.yaml` and `plane.env` exist:
 
-```powershell
+```bash
 docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml up -d
 ```
 
 Stop:
 
-```powershell
+```bash
 docker compose --env-file stacks/plane/plane.env -f stacks/plane/compose.yaml down
 ```

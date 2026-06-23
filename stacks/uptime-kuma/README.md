@@ -6,9 +6,10 @@ Private uptime and endpoint monitoring for Ops Board.
 
 From the repo root:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
+./scripts/bootstrap-uptime-kuma.sh
 ```
 
 Open:
@@ -25,9 +26,9 @@ http://<tailscale-hostname>:3001
 
 ## First Run
 
-Create the first Uptime Kuma admin account in the web UI.
+Uptime Kuma first-run setup is code-backed for normal Ops Board development.
 
-Create a status page with this slug:
+The Compose file selects embedded MariaDB, and `./scripts/bootstrap-uptime-kuma.sh` creates the first local admin user from `secrets/uptime_kuma_admin_password`, applies baseline monitors from `bootstrap/monitors.yaml`, and creates or updates the status page with this slug:
 
 ```text
 ops-board
@@ -37,9 +38,9 @@ Homepage uses that status page slug for its Uptime Kuma widget.
 
 ## Storage
 
-Uptime Kuma stores SQLite data under `/app/data` in the Docker volume `uptime-kuma-data`.
+Uptime Kuma stores embedded MariaDB data under `/app/data` in the Docker volume `uptime-kuma-data`.
 
-Keep this data on local Docker-managed storage. Do not move it to NFS, cloud sync folders, or remote filesystems because SQLite needs reliable file locking.
+Keep this data on local Docker-managed storage. Do not move it to NFS, cloud sync folders, or remote filesystems unless that storage model has been deliberately tested for this workload.
 
 ## Monitor Targets
 
@@ -49,18 +50,18 @@ See `docs/monitors.md`.
 
 Show status:
 
-```powershell
-.\scripts\status.ps1 -Stack uptime-kuma
+```bash
+./scripts/status.sh --stack uptime-kuma
 ```
 
 Stop while preserving data:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml down
 ```
 
 Reset and delete the Uptime Kuma volume:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml down -v
 ```

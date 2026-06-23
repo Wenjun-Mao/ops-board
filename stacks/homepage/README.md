@@ -6,8 +6,8 @@ Private service directory for Ops Board.
 
 From the repo root:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
 ```
 
@@ -37,18 +37,18 @@ The Uptime Kuma widget reads from the status page slug in `.env`:
 UPTIME_KUMA_STATUS_SLUG=ops-board
 ```
 
-Create that status page in Uptime Kuma before expecting the widget to show useful data.
+Run `./scripts/bootstrap-uptime-kuma.sh` before expecting the widget to show useful data. The bootstrap creates or updates the `ops-board` status page.
 
 ## Commands
 
 Show status:
 
-```powershell
-.\scripts\status.ps1 -Stack homepage
+```bash
+./scripts/status.sh --stack homepage
 ```
 
 Stop:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/homepage/compose.yaml down
 ```

@@ -13,22 +13,22 @@ Both examples use `shared/ops_observe.py`, a tiny local helper that prototypes a
 
 From the repo root:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 docker compose --env-file .env -f compose.yaml up -d
 ```
 
 Verify the collector is reachable:
 
-```powershell
-Invoke-WebRequest -UseBasicParsing http://localhost:13133/ -TimeoutSec 20
+```bash
+curl --fail --show-error --silent --max-time 20 http://localhost:13133/
 ```
 
 Expected: HTTP `200`.
 
 ## Local Python Test Run
 
-```powershell
+```bash
 uv run --project examples/onboarding pytest examples/onboarding/tests examples/onboarding/dummy-job/tests examples/onboarding/dummy-api/tests -v
 ```
 
@@ -36,8 +36,8 @@ Expected: all tests pass.
 
 ## Run The Dummy Job Locally
 
-```powershell
-$env:OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
+```bash
+export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
 uv run --project examples/onboarding/dummy-job python examples/onboarding/dummy-job/job.py
 ```
 
@@ -45,8 +45,8 @@ Expected: the command prints a successful job summary and emits an OpenTelemetry
 
 ## Run The Dummy API Locally
 
-```powershell
-$env:OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
+```bash
+export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
 uv run --project examples/onboarding/dummy-api uvicorn app:app --app-dir examples/onboarding/dummy-api --host 0.0.0.0 --port 8000
 ```
 
@@ -59,7 +59,7 @@ http://localhost:8000/work/demo
 
 ## Run With Docker Compose
 
-```powershell
+```bash
 docker compose -f examples/onboarding/compose.yaml up --build -d dummy-api
 docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
 ```
@@ -74,8 +74,8 @@ Expected:
 
 When a monitored project runs on another tailnet machine, set `OPS_BOARD_OTLP_ENDPOINT` to the Ops Board host's private address:
 
-```powershell
-$env:OPS_BOARD_OTLP_ENDPOINT="http://<ops-board-tailscale-hostname>:4318"
+```bash
+export OPS_BOARD_OTLP_ENDPOINT="http://<ops-board-tailscale-hostname>:4318"
 ```
 
 ## Verify In SigNoz
@@ -83,8 +83,10 @@ $env:OPS_BOARD_OTLP_ENDPOINT="http://<ops-board-tailscale-hostname>:4318"
 After calling the API and running the job, open SigNoz:
 
 ```text
-http://localhost:8080
+http://hp-15:8080
 ```
+
+Use `localhost:8080` only from a browser running directly on the Ops Board host.
 
 Look for these service names:
 
@@ -110,14 +112,14 @@ OPS_BOARD_OTLP_ENDPOINT=http://<ops-board-tailscale-hostname>:4318
 
 Run:
 
-```powershell
+```bash
 uv run --project examples/onboarding pytest examples/onboarding/tests examples/onboarding/dummy-job/tests examples/onboarding/dummy-api/tests -v
 docker compose -f examples/onboarding/compose.yaml config --quiet
 docker compose -f examples/onboarding/compose.yaml build
 docker compose --env-file .env -f compose.yaml up -d
 docker compose -f examples/onboarding/compose.yaml up -d dummy-api
-Invoke-WebRequest -UseBasicParsing http://localhost:18080/health -TimeoutSec 20
-Invoke-WebRequest -UseBasicParsing http://localhost:18080/work/demo -TimeoutSec 20
+curl --fail --show-error --silent --max-time 20 http://localhost:18080/health
+curl --fail --show-error --silent --max-time 20 http://localhost:18080/work/demo
 docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
 ```
 

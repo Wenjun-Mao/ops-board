@@ -6,8 +6,8 @@ Shared SigNoz observability stack for centralized logs, traces, metrics, and OTL
 
 From the repo root:
 
-```powershell
-.\scripts\init-local-config.ps1
+```bash
+./scripts/init-local-config.sh --host hp-15
 docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
 ```
 
@@ -38,7 +38,7 @@ Starting this compose file starts the full SigNoz stack:
 | `init-clickhouse` | One-shot ClickHouse user script setup |
 | `signoz-telemetrystore-migrator` | One-shot telemetry schema migrations |
 
-The one-shot services exit with code `0` after setup. Use `.\scripts\status.ps1 -Stack signoz` to see both running and completed services.
+The one-shot services exit with code `0` after setup. Use `./scripts/status.sh --stack signoz` to see both running and completed services.
 
 ## Current Stack Pins
 
@@ -92,18 +92,22 @@ Optional: if you have an accessible mirror URL, set `HISTOGRAM_QUANTILE_URL` in 
 
 ## Onboarding Projects
 
-See `docs/ONBOARDING.md`.
+Use the canonical onboarding docs:
+
+- [Human guide](../../docs/onboarding/human-guide.md)
+- [Onboarding contract](../../docs/onboarding/onboarding-contract.md)
+- [Codex guide](../../docs/onboarding/codex-guide.md)
 
 ## Stop And Reset
 
 Stop while keeping data:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/signoz/compose.yaml down
 ```
 
 Full reset:
 
-```powershell
+```bash
 docker compose --env-file .env -f stacks/signoz/compose.yaml down -v
 ```

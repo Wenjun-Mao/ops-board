@@ -48,6 +48,8 @@ Plane:             http://localhost:8082
 
 For other tailnet machines, replace `localhost` with the Ops Board host's Tailscale MagicDNS name or Tailscale IP.
 
+For the HP-15 deployment, remote tailnet clients should use `http://hp-15:4318` for OTLP HTTP and `http://hp-15:8080` for the SigNoz UI.
+
 ## App Config Shape
 
 Projects should be able to express onboarding config in this shape:

@@ -44,5 +44,5 @@ VECTOR_DEPLOYMENT_ENV=prod
 ## Security Notes
 
 - Allow access only from trusted machines on the tailnet.
-- Close SigNoz account registration after the initial admin account is created.
+- After the initial SigNoz admin account is created, verify the current account-registration setting before broader rollout and document the chosen state.
 - Do not expose SigNoz or telemetry ports publicly until a reverse proxy and authentication boundary are intentionally added.

@@ -4,11 +4,12 @@ These screenshots support `docs/monitoring/ops-board-user-manual.md`.
 
 Capture them from the repo root after the board is running:
 
-```powershell
-npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:3000 docs/monitoring/images/homepage-overview.png
-npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:3001/status/ops-board docs/monitoring/images/uptime-kuma-first-run.png
-npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:8080 docs/monitoring/images/signoz-first-run.png
-npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 http://localhost:8082 docs/monitoring/images/plane-first-run.png
+```bash
+OPS_BOARD_HOST="${OPS_BOARD_HOST:-hp-15}"
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 "http://$OPS_BOARD_HOST:3000" docs/monitoring/images/homepage-overview.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 "http://$OPS_BOARD_HOST:3001/status/ops-board" docs/monitoring/images/uptime-kuma-first-run.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 "http://$OPS_BOARD_HOST:8080" docs/monitoring/images/signoz-first-run.png
+npx playwright screenshot --viewport-size "1365,900" --wait-for-timeout 3000 "http://$OPS_BOARD_HOST:8082" docs/monitoring/images/plane-first-run.png
 ```
 
 Authenticated reference screenshots are captured after the local admin/workspace setup:

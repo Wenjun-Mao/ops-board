@@ -209,13 +209,13 @@ Remove orphaned containers during an update only when you intentionally want cle
 
 Stop Ops Board while preserving volumes:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml down
 ```
 
 Reset Ops Board and wipe its named volumes:
 
-```powershell
+```bash
 docker compose --env-file .env -f compose.yaml down -v
 ```
 
@@ -241,7 +241,7 @@ Use these docs when operating the board or connecting projects to it:
 
 ## Current Priorities
 
-1. Validate the Linux-first workflow on `HP-15`.
+1. Onboard the first real project using `docs/onboarding/*` and the onboarding playground as the baseline.
 2. Finish stack-specific backup and restore jobs.
-3. Decide whether Healthchecks adds value beyond Uptime Kuma.
+3. Decide whether Healthchecks adds value beyond Uptime Kuma after a real scheduled-job pilot.
 4. Revisit a reverse proxy only after Tailscale-first access feels limiting.

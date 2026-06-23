@@ -13,8 +13,8 @@ It demonstrates:
 
 From the repo root:
 
-```powershell
-$env:OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
+```bash
+export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
 uv run --project examples/onboarding/dummy-api uvicorn app:app --app-dir examples/onboarding/dummy-api --host 0.0.0.0 --port 8000
 ```
 
@@ -27,12 +27,12 @@ http://localhost:8000/work/demo
 
 ## Run Tests
 
-```powershell
+```bash
 uv run --project examples/onboarding/dummy-api pytest examples/onboarding/dummy-api/tests -v
 ```
 
 ## Run In Docker
 
-```powershell
+```bash
 docker compose -f examples/onboarding/compose.yaml up --build -d dummy-api
 ```

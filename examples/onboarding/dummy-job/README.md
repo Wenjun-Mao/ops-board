@@ -13,8 +13,8 @@ It demonstrates:
 
 From the repo root:
 
-```powershell
-$env:OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
+```bash
+export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
 uv run --project examples/onboarding/dummy-job python examples/onboarding/dummy-job/job.py
 ```
 
@@ -22,12 +22,12 @@ Expected: the command prints a success summary.
 
 ## Run Tests
 
-```powershell
+```bash
 uv run --project examples/onboarding/dummy-job pytest examples/onboarding/dummy-job/tests -v
 ```
 
 ## Run In Docker
 
-```powershell
+```bash
 docker compose -f examples/onboarding/compose.yaml run --rm dummy-job
 ```
