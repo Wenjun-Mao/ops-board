@@ -233,6 +233,7 @@ The old `*.ps1` operator scripts remain for compatibility during the transition,
 Use these docs when operating the board or connecting projects to it:
 
 - `docs/monitoring/ops-board-user-manual.md` - how to use Ops Board day to day.
+- `docs/monitoring/first-run-accounts.md` - SigNoz and Plane first admin/workspace setup checklist.
 - `docs/onboarding/human-guide.md` - why and how colleagues should onboard projects.
 - `docs/onboarding/onboarding-contract.md` - stable service identity and telemetry contract.
 - `docs/onboarding/codex-guide.md` - machine-friendly onboarding instructions for Codex sessions.

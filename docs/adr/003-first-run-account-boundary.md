@@ -1,4 +1,4 @@
-# 0003. First-Run Account Boundary
+# 003. First-Run Account Boundary
 
 Date: 2026-06-07
 

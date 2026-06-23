@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Create: `docs/adr/0003-first-run-account-boundary.md`
+- Create: `docs/adr/003-first-run-account-boundary.md`
   - Records that Uptime Kuma is automated, while SigNoz and Plane first admin/workspace setup stays manual for v1 unless a future ADR selects an official bootstrap contract.
 - Create: `scripts/smoke-day1.ps1`
   - Runs the repeatable Day-1 acceptance smoke: Compose config, Uptime Kuma idempotent bootstrap, local endpoints, onboarding dummy API/job, and SigNoz telemetry query.
@@ -40,7 +40,7 @@
   - Splits Uptime Kuma public link and internal widget URL variables.
 - Modify: `stacks/homepage/config/services.yaml`
   - Uses the public URL for the Uptime Kuma link and the internal URL for the Uptime Kuma widget.
-- Modify: `docs/adr/0001-v1-status-source.md`
+- Modify: `docs/adr/001-v1-status-source.md`
   - Records the public-vs-internal URL rule for Homepage server-side widgets.
 
 Do not commit or print: `.env`, `secrets/*`, `stacks/plane/plane.env`, `temp/*`, virtualenvs, caches, or Docker volume data.
@@ -50,14 +50,14 @@ Do not commit or print: `.env`, `secrets/*`, `stacks/plane/plane.env`, `temp/*`,
 ### Task 1: Record The First-Run Account Boundary
 
 **Files:**
-- Create: `docs/adr/0003-first-run-account-boundary.md`
+- Create: `docs/adr/003-first-run-account-boundary.md`
 
 - [ ] **Step 1: Create the ADR**
 
-Create `docs/adr/0003-first-run-account-boundary.md`:
+Create `docs/adr/003-first-run-account-boundary.md`:
 
 ```markdown
-# 0003. First-Run Account Boundary
+# 003. First-Run Account Boundary
 
 Date: 2026-06-07
 
@@ -97,8 +97,8 @@ Repo-owned scripts may verify that SigNoz and Plane containers are healthy, that
 Run:
 
 ```powershell
-Test-Path docs\adr\0003-first-run-account-boundary.md
-Select-String -Path docs\adr\0003-first-run-account-boundary.md -Pattern "keeps SigNoz and Plane first admin/workspace setup manual"
+Test-Path docs\adr\003-first-run-account-boundary.md
+Select-String -Path docs\adr\003-first-run-account-boundary.md -Pattern "keeps SigNoz and Plane first admin/workspace setup manual"
 ```
 
 Expected:
@@ -721,7 +721,7 @@ In `stacks/homepage/config/services.yaml`, replace the Uptime Kuma service with:
           slug: "{{HOMEPAGE_VAR_UPTIME_KUMA_STATUS_SLUG}}"
 ```
 
-In `docs/adr/0001-v1-status-source.md`, add this paragraph after the Homepage decision paragraph:
+In `docs/adr/001-v1-status-source.md`, add this paragraph after the Homepage decision paragraph:
 
 ```markdown
 Homepage should use browser-facing public URLs for links and container-reachable internal URLs for server-side widgets. For Uptime Kuma, that means the link can use `UPTIME_KUMA_PUBLIC_URL`, while the widget proxy should use `UPTIME_KUMA_INTERNAL_URL`.
@@ -836,15 +836,15 @@ Expected:
 Run:
 
 ```powershell
-git add docs\adr\0003-first-run-account-boundary.md docs\adr\0001-v1-status-source.md .env.example scripts\smoke-day1.ps1 scripts\README.md scripts\backup.ps1 scripts\restore.ps1 stacks\homepage\compose.yaml stacks\homepage\config\services.yaml docs\monitoring\ops-board-user-manual.md docs\monitoring\images\README.md docs\monitoring\images\homepage-overview.png docs\monitoring\images\uptime-kuma-first-run.png docs\monitoring\images\signoz-first-run.png docs\monitoring\images\plane-first-run.png docs\superpowers\plans\2026-06-07-day-1-acceptance-pass.md
+git add docs\adr\003-first-run-account-boundary.md docs\adr\001-v1-status-source.md .env.example scripts\smoke-day1.ps1 scripts\README.md scripts\backup.ps1 scripts\restore.ps1 stacks\homepage\compose.yaml stacks\homepage\config\services.yaml docs\monitoring\ops-board-user-manual.md docs\monitoring\images\README.md docs\monitoring\images\homepage-overview.png docs\monitoring\images\uptime-kuma-first-run.png docs\monitoring\images\signoz-first-run.png docs\monitoring\images\plane-first-run.png docs\superpowers\plans\2026-06-07-day-1-acceptance-pass.md
 git diff --cached --name-only
 ```
 
 Expected staged files:
 
 ```text
-docs/adr/0003-first-run-account-boundary.md
-docs/adr/0001-v1-status-source.md
+docs/adr/003-first-run-account-boundary.md
+docs/adr/001-v1-status-source.md
 .env.example
 scripts/smoke-day1.ps1
 scripts/README.md

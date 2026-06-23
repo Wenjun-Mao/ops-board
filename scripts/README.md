@@ -82,7 +82,7 @@ Run the onboarding endpoints without querying ClickHouse:
 ./scripts/smoke-day1.sh --skip-telemetry-query
 ```
 
-The script does not create SigNoz or Plane admin accounts. Those first-run account steps remain manual for v1.
+The script does not create SigNoz or Plane admin accounts. Those first-run account steps remain manual for v1; use `docs/monitoring/first-run-accounts.md` for the checklist.
 
 ## status.sh
 

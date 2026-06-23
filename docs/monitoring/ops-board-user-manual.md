@@ -43,7 +43,7 @@ docker compose --env-file .env -f compose.yaml up -d
 
 Use `./scripts/init-local-config.sh --host hp-15 --force` only when intentionally recreating ignored local config and rotating local secrets.
 
-Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setup remain manual for v1; keep those credentials outside the repo.
+Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setup remain manual for v1; keep those credentials outside the repo. Use `docs/monitoring/first-run-accounts.md` for the SigNoz and Plane setup checklist.
 
 ## Which Tool To Use
 
@@ -150,6 +150,6 @@ Ops Board v1 is good enough for pilot onboarding. It is not yet a fully automate
 
 Current manual steps:
 
-- Create SigNoz and Plane first admin/workspace accounts through their UIs.
+- Create SigNoz and Plane first admin/workspace accounts through their UIs, using `docs/monitoring/first-run-accounts.md`.
 - Add real project entries to Homepage manually.
 - Use project docs to track ownership and runtime location.

@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Create: `docs/adr/0001-v1-status-source.md`
+- Create: `docs/adr/001-v1-status-source.md`
   - Records the v1 decision that Uptime Kuma is the status source and Homepage is the launch board.
 - Modify: `.env.example`
   - Adds `DUMMY_API_PUBLIC_URL=http://localhost:18080` for Homepage's onboarding playground link.
@@ -198,14 +198,14 @@ Expected: the health request returns HTTP `200` and JSON containing `"status":"o
 ### Task 3: Record The V1 Status Source Decision
 
 **Files:**
-- Create: `docs/adr/0001-v1-status-source.md`
+- Create: `docs/adr/001-v1-status-source.md`
 
 - [ ] **Step 1: Create the ADR**
 
-Write `docs/adr/0001-v1-status-source.md` with exactly this content:
+Write `docs/adr/001-v1-status-source.md` with exactly this content:
 
 ```markdown
-# 0001. V1 Status Source
+# 001. V1 Status Source
 
 Date: 2026-06-07
 
@@ -248,8 +248,8 @@ Healthchecks is deferred until scheduled-job monitoring in real projects proves 
 Run:
 
 ```powershell
-Test-Path docs\adr\0001-v1-status-source.md
-Select-String -Path docs\adr\0001-v1-status-source.md -Pattern "Uptime Kuma is the v1 status source"
+Test-Path docs\adr\001-v1-status-source.md
+Select-String -Path docs\adr\001-v1-status-source.md -Pattern "Uptime Kuma is the v1 status source"
 ```
 
 Expected: `Test-Path` prints `True`, and `Select-String` prints the decision line.
@@ -259,7 +259,7 @@ Expected: `Test-Path` prints `True`, and `Select-String` prints the decision lin
 Run only after the user agrees to commit:
 
 ```powershell
-git add docs/adr/0001-v1-status-source.md
+git add docs/adr/001-v1-status-source.md
 git commit -m "docs: record v1 status source decision"
 ```
 

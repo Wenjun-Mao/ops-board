@@ -1,4 +1,4 @@
-# 0004 Linux-First Operator Workflow
+# 004. Linux-First Operator Workflow
 
 ## Status
 

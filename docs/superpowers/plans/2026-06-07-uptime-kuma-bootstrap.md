@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Create: `docs/adr/0002-uptime-kuma-bootstrap.md`
+- Create: `docs/adr/002-uptime-kuma-bootstrap.md`
   - Records the durable setup-contract change from manual Uptime Kuma UI setup to config/script bootstrap.
 - Modify: `.env.example`
   - Adds Uptime Kuma DB/bootstrap settings and demo admin username defaults.
@@ -52,14 +52,14 @@ Do not commit or print: `.env`, `secrets/*`, `stacks/plane/plane.env`, `temp/*`,
 ### Task 1: Record Bootstrap Contract
 
 **Files:**
-- Create: `docs/adr/0002-uptime-kuma-bootstrap.md`
+- Create: `docs/adr/002-uptime-kuma-bootstrap.md`
 
 - [ ] **Step 1: Add the ADR**
 
-Create `docs/adr/0002-uptime-kuma-bootstrap.md`:
+Create `docs/adr/002-uptime-kuma-bootstrap.md`:
 
 ```markdown
-# 0002. Uptime Kuma Bootstrap
+# 002. Uptime Kuma Bootstrap
 
 Date: 2026-06-07
 
@@ -107,8 +107,8 @@ The local admin password will live in `secrets/uptime_kuma_admin_password`, gene
 Run:
 
 ```powershell
-Test-Path docs\adr\0002-uptime-kuma-bootstrap.md
-Select-String -Path docs\adr\0002-uptime-kuma-bootstrap.md -Pattern "Socket.IO application contract"
+Test-Path docs\adr\002-uptime-kuma-bootstrap.md
+Select-String -Path docs\adr\002-uptime-kuma-bootstrap.md -Pattern "Socket.IO application contract"
 ```
 
 Expected: `True`, then the decision sentence.

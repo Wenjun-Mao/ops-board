@@ -1,4 +1,4 @@
-# 0002. Uptime Kuma Bootstrap
+# 002. Uptime Kuma Bootstrap
 
 Date: 2026-06-07
 
