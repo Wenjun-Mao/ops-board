@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
+import os
 import threading
 import time
 import warnings
@@ -12,6 +13,10 @@ from typing import Any, ParamSpec, TypeVar, cast
 
 from opentelemetry import trace
 from opentelemetry._logs import get_logger_provider, set_logger_provider
+from opentelemetry.environment_variables import (
+    OTEL_PYTHON_TRACER_PROVIDER,
+    _OTEL_PYTHON_LOGGER_PROVIDER,
+)
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -173,14 +178,20 @@ def _otlp_signal_endpoint(base_endpoint: str, signal: str) -> str:
 
 
 def _reset_for_tests() -> None:
-    global _BOOTSTRAPPED, _EXPORT_ENABLED, _LOGGER_PROVIDER, _SETTINGS, _TRACER_PROVIDER
+    global _BOOTSTRAPPED, _EXPORT_ENABLED, _LOGGER_PROVIDER, _LOGGING_HANDLER, _SETTINGS, _TRACER_PROVIDER
     with _BOOTSTRAP_LOCK:
-        _detach_logging_handler()
-        _shutdown_provider(_LOGGER_PROVIDER)
-        _shutdown_provider(_TRACER_PROVIDER)
+        logger_provider = _LOGGER_PROVIDER
+        tracer_provider = _TRACER_PROVIDER
+        _run_cleanup_steps(
+            _detach_logging_handler,
+            lambda: _clear_otel_globals_if_owned(tracer_provider, logger_provider),
+            lambda: _shutdown_provider(logger_provider),
+            lambda: _shutdown_provider(tracer_provider),
+        )
         _BOOTSTRAPPED = False
         _SETTINGS = None
         _EXPORT_ENABLED = None
+        _LOGGING_HANDLER = None
         _LOGGER_PROVIDER = None
         _TRACER_PROVIDER = None
         _force_clear_otel_globals_for_tests()
@@ -223,6 +234,8 @@ def _validate_rebootstrap(settings: OpsBoardSettings, export: bool) -> None:
 
 
 def _ensure_no_existing_otel_provider_conflicts() -> None:
+    _ensure_no_otel_provider_env_conflicts()
+
     tracer_provider = _configured_tracer_provider()
     if tracer_provider is not None:
         raise RuntimeError(
@@ -238,6 +251,20 @@ def _ensure_no_existing_otel_provider_conflicts() -> None:
             "observability bootstrap. Configure Ops Board observability first, or "
             "avoid bootstrapping it in this process."
         )
+
+
+def _ensure_no_otel_provider_env_conflicts() -> None:
+    provider_env_vars = (
+        (OTEL_PYTHON_TRACER_PROVIDER, "tracer provider"),
+        (_OTEL_PYTHON_LOGGER_PROVIDER, "logger provider"),
+    )
+    for env_var, provider_name in provider_env_vars:
+        if env_var in os.environ:
+            raise RuntimeError(
+                f"OpenTelemetry {provider_name} is configured by {env_var} before "
+                "Ops Board observability bootstrap. Remove that environment variable "
+                "or let the host application own observability bootstrap."
+            )
 
 
 def _ensure_active_otel_providers(
@@ -259,12 +286,15 @@ def _rollback_failed_bootstrap(
     tracer_provider: TracerProvider,
     logger_provider: LoggerProvider,
 ) -> None:
-    cleanup_steps = (
+    _run_cleanup_steps(
         lambda: _clear_otel_globals_if_owned(tracer_provider, logger_provider),
         _detach_logging_handler,
         lambda: _shutdown_provider(logger_provider),
         lambda: _shutdown_provider(tracer_provider),
     )
+
+
+def _run_cleanup_steps(*cleanup_steps: Callable[[], None]) -> None:
     for cleanup_step in cleanup_steps:
         try:
             cleanup_step()
@@ -366,20 +396,22 @@ def _configured_logger_provider() -> object | None:
 
 
 def _clear_otel_globals_if_owned(
-    tracer_provider: TracerProvider,
-    logger_provider: LoggerProvider,
+    tracer_provider: object | None,
+    logger_provider: object | None,
 ) -> None:
     # Production rollback may touch OTel's set-once private globals, but only when
     # they still point to the providers created by the failed bootstrap attempt.
     import opentelemetry._logs._internal as logs_internal
     import opentelemetry.trace as trace_api
 
-    if trace_api._TRACER_PROVIDER is tracer_provider:
-        trace_api._TRACER_PROVIDER = None
-        trace_api._TRACER_PROVIDER_SET_ONCE._done = False
-    if logs_internal._LOGGER_PROVIDER is logger_provider:
-        logs_internal._LOGGER_PROVIDER = None
-        logs_internal._LOGGER_PROVIDER_SET_ONCE._done = False
+    with trace_api._TRACER_PROVIDER_SET_ONCE._lock:
+        if tracer_provider is not None and trace_api._TRACER_PROVIDER is tracer_provider:
+            trace_api._TRACER_PROVIDER = None
+            trace_api._TRACER_PROVIDER_SET_ONCE._done = False
+    with logs_internal._LOGGER_PROVIDER_SET_ONCE._lock:
+        if logger_provider is not None and logs_internal._LOGGER_PROVIDER is logger_provider:
+            logs_internal._LOGGER_PROVIDER = None
+            logs_internal._LOGGER_PROVIDER_SET_ONCE._done = False
 
 
 def _force_clear_otel_globals_for_tests() -> None:
