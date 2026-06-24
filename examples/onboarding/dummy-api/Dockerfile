@@ -9,10 +9,10 @@ WORKDIR /repo/examples/onboarding/dummy-api
 COPY packages/ops-board-observe /repo/packages/ops-board-observe
 COPY examples/onboarding/dummy-api/pyproject.toml ./pyproject.toml
 COPY examples/onboarding/dummy-api/uv.lock ./uv.lock
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-install-project
 
 COPY examples/onboarding/dummy-api/app.py ./app.py
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "--no-sync", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

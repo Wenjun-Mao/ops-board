@@ -9,10 +9,10 @@ WORKDIR /repo/examples/onboarding/dummy-job
 COPY packages/ops-board-observe /repo/packages/ops-board-observe
 COPY examples/onboarding/dummy-job/pyproject.toml ./pyproject.toml
 COPY examples/onboarding/dummy-job/uv.lock ./uv.lock
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-install-project
 
 COPY examples/onboarding/dummy-job/job.py ./job.py
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uv", "run", "python", "job.py"]
+CMD ["uv", "run", "--no-sync", "python", "job.py"]

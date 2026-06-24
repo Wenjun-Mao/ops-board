@@ -1,0 +1,92 @@
+# Keep repo-root Docker contexts lean without excluding the onboarding build inputs:
+# packages/ops-board-observe/**
+# examples/onboarding/dummy-api/**
+# examples/onboarding/dummy-job/**
+
+# Git and local worktree metadata
+.git
+.git/
+.worktrees
+.worktrees/
+.superpowers
+.superpowers/
+/temp
+/temp/
+/tmp
+/tmp/
+
+# Local environment files and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+/stacks/*/*.env
+secrets/*
+**/secrets/*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Runtime data, generated stack state, and workflow outputs
+/stacks/*/data/
+/stacks/*/runtime/
+/stacks/*/outputs/
+/outputs/
+
+# Backups, dumps, and archives
+backups/
+/backups/
+*.bak
+*.backup
+*.dump
+*.sql.dump
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Logs
+*.log
+**/*.log
+logs/
+**/logs/
+
+# Python local artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+**/.mypy_cache/
+.ruff_cache/
+**/.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+**/.venv/
+venv/
+**/venv/
+
+# Node and package-manager caches
+node_modules/
+**/node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+.cache/
+**/.cache/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
