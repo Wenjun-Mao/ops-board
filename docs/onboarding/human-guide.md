@@ -101,6 +101,25 @@ Run the job, then check SigNoz for `service.name = my-job`.
 
 For the API example below, use `OPS_BOARD_SERVICE_NAME=my-api` in the same minimum config block before starting the service.
 
+Bootstrap observability once during application startup. For FastAPI, use lifespan:
+
+```python
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from ops_board_observe import bootstrap_observability, observe
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    bootstrap_observability()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+```
+
 Expose a health endpoint:
 
 ```python

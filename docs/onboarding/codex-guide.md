@@ -97,6 +97,25 @@ def call_external_service() -> str:
 
 ## Web/API Pattern
 
+Bootstrap observability once during app startup. For FastAPI, prefer the lifespan pattern:
+
+```python
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from ops_board_observe import bootstrap_observability, observe
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    bootstrap_observability()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+```
+
 Expose a health endpoint:
 
 ```python
