@@ -18,9 +18,18 @@
 # Local environment files and secrets
 .env
 .env.*
+*.env
+*.env.*
 **/.env
 **/.env.*
-/stacks/*/*.env
+**/*.env
+**/*.env.*
+/stacks/**/*.env
+/stacks/**/*.env.*
+!.env.example
+!*.env.example
+!**/.env.example
+!**/*.env.example
 secrets/*
 **/secrets/*
 *.pem
