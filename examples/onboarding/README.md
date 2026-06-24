@@ -9,6 +9,8 @@ It covers two common shapes:
 
 The playground consumes `ops-board-observe` through a local path dependency. That keeps the demo aligned with the package colleagues install in real projects.
 
+The playground uses `examples/onboarding/config/ops-board.example.yaml` instead of a project-root `ops-board.yaml` because the dummy API and dummy job live inside this repo; real projects should create `ops-board.yaml` at their own project root, as shown in `docs/onboarding/human-guide.md`.
+
 ## Prerequisites
 
 From the repo root:

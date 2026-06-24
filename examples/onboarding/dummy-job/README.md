@@ -11,7 +11,7 @@ It demonstrates:
 
 ## Run Locally
 
-From the repo root:
+From the repo root, point the package at the playground config file:
 
 ```bash
 export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
