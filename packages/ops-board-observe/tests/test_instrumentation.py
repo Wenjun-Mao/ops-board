@@ -191,9 +191,7 @@ def test_bootstrap_rolls_back_provider_globals_after_logging_handler_failure(
     assert len(_otel_logging_handlers()) == 1
 
 
-def test_bootstrap_success_log_handler_failure_does_not_break_bootstrap(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_bootstrap_success_log_handler_failure_does_not_break_bootstrap(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_noop_otlp_exporters(monkeypatch)
     root_logger = logging.getLogger()
     raising_handler = _RaisingHandler()
@@ -211,16 +209,11 @@ def test_bootstrap_success_log_handler_failure_does_not_break_bootstrap(
         raising_handler.close()
 
 
-def test_bootstrap_rollback_keeps_external_providers_after_install_race(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_bootstrap_rollback_keeps_external_providers_after_install_race(monkeypatch: pytest.MonkeyPatch) -> None:
     external_tracer_provider = TracerProvider()
     external_logger_provider = LoggerProvider()
 
-    def fail_after_external_provider_wins(
-        tracer_provider: TracerProvider,
-        logger_provider: LoggerProvider,
-    ) -> None:
+    def fail_after_external_provider_wins(*_: object) -> None:
         import opentelemetry._logs._internal as logs_internal
         import opentelemetry.trace as trace_api
 
@@ -230,11 +223,7 @@ def test_bootstrap_rollback_keeps_external_providers_after_install_race(
         logs_internal._LOGGER_PROVIDER_SET_ONCE._done = True
         raise RuntimeError("provider race")
 
-    monkeypatch.setattr(
-        instrumentation,
-        "_ensure_active_otel_providers",
-        fail_after_external_provider_wins,
-    )
+    monkeypatch.setattr(instrumentation, "_ensure_active_otel_providers", fail_after_external_provider_wins)
 
     with pytest.raises(RuntimeError, match="provider race"):
         _bootstrap(export=False)
@@ -242,6 +231,42 @@ def test_bootstrap_rollback_keeps_external_providers_after_install_race(
     assert instrumentation._BOOTSTRAPPED is False
     assert trace.get_tracer_provider() is external_tracer_provider
     assert get_logger_provider() is external_logger_provider
+
+
+def test_bootstrap_rolls_back_tracer_provider_when_logger_provider_setter_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_set_logger_provider(_: LoggerProvider) -> None:
+        raise RuntimeError("logger provider boom")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(instrumentation, "set_logger_provider", fail_set_logger_provider)
+        with pytest.raises(RuntimeError, match="logger provider boom"):
+            _bootstrap(export=False)
+
+    assert instrumentation._BOOTSTRAPPED is False
+    assert instrumentation._configured_tracer_provider() is None
+    assert _bootstrap(export=False).service_name == "unit-service"
+
+
+def test_bootstrap_rollback_clears_owned_globals_when_shutdown_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_after_provider_install(*_: object) -> None:
+        raise RuntimeError("post install boom")
+
+    def fail_shutdown(_: object | None) -> None:
+        raise RuntimeError("shutdown boom")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(instrumentation, "_ensure_active_otel_providers", fail_after_provider_install)
+        patch.setattr(instrumentation, "_shutdown_provider", fail_shutdown)
+        with pytest.raises(RuntimeError, match="post install boom"):
+            _bootstrap(export=False)
+
+    assert instrumentation._configured_tracer_provider() is None
+    assert instrumentation._configured_logger_provider() is None
+    assert _bootstrap(export=False).service_name == "unit-service"
 
 
 def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:

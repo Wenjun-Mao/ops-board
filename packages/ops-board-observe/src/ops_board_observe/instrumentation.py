@@ -64,7 +64,6 @@ def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) ->
     resource = Resource.create(_resource_attributes(settings))
     tracer_provider = TracerProvider(resource=resource)
     logger_provider = LoggerProvider(resource=resource)
-    providers_installed = False
 
     try:
         if export:
@@ -81,7 +80,6 @@ def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) ->
 
         trace.set_tracer_provider(tracer_provider)
         set_logger_provider(logger_provider)
-        providers_installed = True
         _ensure_active_otel_providers(tracer_provider, logger_provider)
 
         if export:
@@ -91,7 +89,6 @@ def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) ->
         _rollback_failed_bootstrap(
             tracer_provider=tracer_provider,
             logger_provider=logger_provider,
-            providers_installed=providers_installed,
         )
         raise
 
@@ -261,13 +258,19 @@ def _rollback_failed_bootstrap(
     *,
     tracer_provider: TracerProvider,
     logger_provider: LoggerProvider,
-    providers_installed: bool,
 ) -> None:
-    _detach_logging_handler()
-    _shutdown_provider(logger_provider)
-    _shutdown_provider(tracer_provider)
-    if providers_installed:
-        _clear_otel_globals_if_owned(tracer_provider, logger_provider)
+    cleanup_steps = (
+        lambda: _clear_otel_globals_if_owned(tracer_provider, logger_provider),
+        _detach_logging_handler,
+        lambda: _shutdown_provider(logger_provider),
+        lambda: _shutdown_provider(tracer_provider),
+    )
+    for cleanup_step in cleanup_steps:
+        try:
+            cleanup_step()
+        except Exception:
+            # Preserve the original bootstrap failure; cleanup is best-effort.
+            continue
 
 
 def _shutdown_provider(provider: object | None) -> None:
