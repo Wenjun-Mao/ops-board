@@ -91,7 +91,7 @@ Use one config channel first. Do not duplicate the same field in multiple places
 | `OPS_BOARD_*` environment variables | Docker Compose, CI, systemd, process managers | The process environment |
 | Docker secret files | Deployed values that should not appear in env or tracked files | `OPS_BOARD_SECRETS_DIR`, or `/run/secrets` by default |
 
-For a teammate onboarding a Python project by hand, ops-board.yaml is the default path. Environment variables are the deployment override path.
+For a teammate onboarding a Python project by hand, `ops-board.yaml` is the default path. Environment variables are the deployment override path.
 
 ## Python Environment Variable Conventions
 
