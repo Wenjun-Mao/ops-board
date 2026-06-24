@@ -18,7 +18,7 @@ export OPS_BOARD_CONFIG_FILE="examples/onboarding/config/ops-board.example.yaml"
 uv run --project examples/onboarding/dummy-api uvicorn app:app --app-dir examples/onboarding/dummy-api --host 0.0.0.0 --port 8000
 ```
 
-Open:
+For this playground-local run, open:
 
 ```text
 http://localhost:8000/health
