@@ -28,6 +28,12 @@ curl --fail --show-error --silent --max-time 20 http://localhost:13133/
 
 Expected: HTTP `200`.
 
+For a real project running on another tailnet machine, run the equivalent preflight from that project host before changing code:
+
+```bash
+curl --fail --show-error --silent --max-time 20 http://hp-15:13133/
+```
+
 ## Local Python Test Run
 
 ```bash

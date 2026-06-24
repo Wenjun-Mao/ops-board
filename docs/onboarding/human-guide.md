@@ -37,6 +37,14 @@ http://hp-15:4318
 
 Use `http://localhost:4318` only for code running directly on `hp-15` itself.
 
+Before installing the package or editing code, run this from the machine where the project will run:
+
+```bash
+curl -fsS --max-time 20 http://hp-15:13133/
+```
+
+Expected: the command exits successfully. If it fails, fix Tailscale, DNS, firewall, or collector reachability with the Ops Board maintainer/admin before continuing. This only proves the collector health endpoint is reachable; the first success test later proves the project emits telemetry.
+
 Collect:
 
 ```text
@@ -46,7 +54,7 @@ deployment.environment
 owner
 runtime host
 Tailscale hostname or IP
-health endpoint URL
+health endpoint URL, if this is a service
 Ops Board OTLP endpoint
 ```
 
@@ -187,6 +195,12 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "my-api"}
 ```
 
+Confirm the health endpoint returns a successful response from a tailnet machine:
+
+```bash
+curl -fsS --max-time 20 http://api-host.tailnet-name.ts.net:8000/health
+```
+
 Wrap key handlers or functions:
 
 ```python
@@ -195,7 +209,7 @@ def process_request(item_id: str) -> dict[str, str]:
     return {"item_id": item_id, "status": "processed"}
 ```
 
-Confirm the health endpoint returns a successful response from a tailnet machine, then share the health URL with the Ops Board maintainer/admin.
+After this check succeeds, share the health URL with the Ops Board maintainer/admin.
 
 > [!NOTE]
 > **Ops Board maintainer/admin step**
@@ -256,7 +270,7 @@ uv remove ops-board-observe
 ## Remote Tailscale Machine
 
 1. Join the same tailnet as `hp-15`.
-2. From the project host, confirm it can reach the Ops Board collector:
+2. From the project host, re-run the collector preflight after deployment changes:
 
    ```bash
    curl -fsS --max-time 20 http://hp-15:13133/
@@ -277,6 +291,7 @@ Health checks can point either from Uptime Kuma to the remote service's tailnet 
 After onboarding, prove the project-owner checks:
 
 ```text
+The project host can reach http://hp-15:13133/.
 The health endpoint returns a successful response.
 SigNoz can see at least one trace from the project.
 The project docs say who owns the project.

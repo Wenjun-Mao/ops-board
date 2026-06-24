@@ -57,6 +57,14 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 
 ## Maintainer/Admin Workflow: Onboard A Colleague Project
 
+Before asking the colleague to install the package or edit app code, ask them to run this from the target runtime host:
+
+```bash
+curl -fsS --max-time 20 http://hp-15:13133/
+```
+
+If it fails, solve the Tailscale, DNS, firewall, or collector reachability issue first. This avoids debugging app instrumentation when the project host cannot reach Ops Board yet.
+
 When a colleague provides a service name, runtime host, and health URL:
 
 1. Open Uptime Kuma at `http://hp-15:3001`.

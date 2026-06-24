@@ -51,6 +51,7 @@ SigNoz UI:         http://hp-15:8080
 Uptime Kuma:       http://hp-15:3001
 Homepage:          http://hp-15:3000
 Plane:             http://hp-15:8082
+Collector health:  http://hp-15:13133
 ```
 
 For local testing from a shell or browser running directly on `hp-15`, or for playground-local checks on that host, use:
@@ -66,6 +67,14 @@ Plane:                                                                   http://
 ```
 
 For non-HP-15 deployments, replace `hp-15` with the Ops Board host's Tailscale MagicDNS name or Tailscale IP.
+
+Before a project owner edits code, the project runtime host should pass this reachability preflight:
+
+```bash
+curl -fsS --max-time 20 http://hp-15:13133/
+```
+
+This preflight proves the target host can reach the collector health endpoint over Tailscale. It does not prove traces or logs are being emitted; that evidence comes after running the app or job.
 
 ## App Config Shape
 
@@ -152,6 +161,7 @@ A project is onboarded when all required items are true:
 
 - It has a stable service name, namespace, environment, and owner.
 - It documents where it runs and how it reaches Ops Board over Tailscale.
+- Its runtime host can reach the Ops Board collector health endpoint.
 - A long-running service exposes a health endpoint and the health URL is recorded.
 - The Ops Board maintainer/admin can create or confirm the Uptime Kuma monitor for that health endpoint.
 - A Python job or key function emits an observed span with success/failure status.
@@ -163,6 +173,7 @@ A project is onboarded when all required items are true:
 
 After onboarding, capture or link concise evidence for:
 
+- Network preflight evidence: from the project runtime host, `curl -fsS --max-time 20 http://hp-15:13133/` succeeds.
 - Config evidence: service identity, runtime host, Tailscale host, OTLP endpoint, and health URL are present in env, secrets, compose, or project docs.
 - App/job run evidence: at least one successful app request or job run completed with the onboarded config.
 - SigNoz evidence: traces and logs identify the expected service name, environment, owner, and runtime host.

@@ -33,6 +33,14 @@ For colleague projects running somewhere other than `hp-15`, use `http://hp-15:4
 
 Keep project-owner work separate from Ops Board maintainer/admin work. In the target project, add package config, health endpoints, tests, and telemetry. Do not create or edit Uptime Kuma monitors, Homepage entries, Plane workspaces, or Ops Board-side credentials unless the user explicitly says this Codex session is acting as the Ops Board maintainer/admin.
 
+Before editing app code, run this network preflight from the target runtime host:
+
+```bash
+curl -fsS --max-time 20 http://hp-15:13133/
+```
+
+If it fails, stop and report the reachability problem before installing the package or changing app code. This preflight proves the target host can reach the collector health endpoint; it does not prove telemetry export until a real request or job runs.
+
 ## Python App Changes
 
 If the target is Python, add the package to the target Python project:
@@ -227,6 +235,8 @@ Verify Ops Board collector from the target host:
 curl -fsS --max-time 20 http://hp-15:13133/
 ```
 
+This should be the same preflight from the start of the guide, re-run after deployment or environment changes.
+
 Run one request or one job execution, then check SigNoz for:
 
 ```text
@@ -239,6 +249,7 @@ deployment.environment = <environment>
 The target project is onboarded when:
 
 - Tests pass.
+- The target runtime host can reach `http://hp-15:13133/`.
 - The health endpoint returns a successful response.
 - The health URL is recorded for the Ops Board maintainer/admin.
 - The Ops Board maintainer/admin has enough information to create or confirm the Uptime Kuma monitor.
