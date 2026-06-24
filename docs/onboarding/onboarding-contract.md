@@ -108,9 +108,9 @@ OPS_BOARD_RUNTIME_HOST=example-host
 OPS_BOARD_TAILSCALE_HOST=example-host.tailnet-name.ts.net
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:8000/health
-OPS_BOARD_CONFIG_FILE=ops-board.yaml
-OPS_BOARD_SECRETS_DIR=/run/secrets
 ```
+
+`OPS_BOARD_CONFIG_FILE` selects a YAML file when Python does not start from that directory. `OPS_BOARD_SECRETS_DIR` selects the Docker secret-file directory when using secret files.
 
 The package also sets standard OpenTelemetry resource attributes in process. Projects may still use standard `OTEL_*` variables when they outgrow the package.
 
