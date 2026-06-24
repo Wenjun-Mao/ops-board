@@ -29,26 +29,22 @@ otlp_endpoint
 health_url
 ```
 
-Use `http://<ops-board-tailscale-hostname>:4318` for remote machines connected through Tailscale. For the HP-15 deployment, use `http://hp-15:4318`.
+For colleague projects running somewhere other than `hp-15`, use `http://hp-15:4318` as the normal OTLP endpoint. Use `localhost` only for code running directly on `hp-15` itself or for playground-local checks.
 
 ## Python App Changes
 
-If the target is Python, add dependencies using `uv`:
+If the target is Python, add the package to the target Python project:
 
 ```bash
-uv add pydantic-settings pyyaml opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-http tenacity
+uv add "ops-board-observe @ git+https://github.com/Wenjun-Mao/ops-board.git#subdirectory=packages/ops-board-observe"
 ```
+
+The package owns the OpenTelemetry, PyYAML, `pydantic-settings`, and `tenacity` dependencies needed by the helper. Do not add those transitive dependencies manually unless the target project already uses them directly.
 
 If it is a FastAPI app, also ensure:
 
 ```bash
 uv add fastapi uvicorn
-```
-
-Copy or adapt the helper pattern from:
-
-```text
-examples/onboarding/shared/ops_observe.py
 ```
 
 Add config through env vars:
@@ -60,7 +56,7 @@ OPS_BOARD_ENVIRONMENT=<environment>
 OPS_BOARD_OWNER=<owner>
 OPS_BOARD_RUNTIME_HOST=<host>
 OPS_BOARD_TAILSCALE_HOST=<tailscale-host>
-OPS_BOARD_OTLP_ENDPOINT=http://<ops-board-host>:4318
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://<service-host>:<port>/health
 ```
 
@@ -69,9 +65,9 @@ OPS_BOARD_HEALTH_URL=http://<service-host>:<port>/health
 Add bootstrap once near the entrypoint:
 
 ```python
-from shared.ops_observe import bootstrap_observability, observe
+from ops_board_observe import bootstrap_observability, observe
 
-bootstrap_observability(service_name="<service-name>", service_namespace="<namespace>")
+bootstrap_observability()
 ```
 
 Decorate the main work:
@@ -123,7 +119,7 @@ environment:
   OPS_BOARD_OWNER: <owner>
   OPS_BOARD_RUNTIME_HOST: <host>
   OPS_BOARD_TAILSCALE_HOST: <tailscale-host>
-  OPS_BOARD_OTLP_ENDPOINT: http://<ops-board-host>:4318
+  OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
   OPS_BOARD_HEALTH_URL: http://<service-host>:<port>/health
 ```
 
@@ -144,7 +140,7 @@ curl -fsS --max-time 20 <health-url>
 Verify Ops Board collector from the target host:
 
 ```bash
-curl -fsS --max-time 20 http://<ops-board-host>:13133/
+curl -fsS --max-time 20 http://hp-15:13133/
 ```
 
 Run one request or one job execution, then check SigNoz for:

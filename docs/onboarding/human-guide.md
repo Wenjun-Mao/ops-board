@@ -30,6 +30,14 @@ For v1, onboarding means:
 
 ## Before You Start
 
+This guide assumes the project you are onboarding runs somewhere other than `hp-15`. For colleague projects, use this default OTLP endpoint:
+
+```text
+http://hp-15:4318
+```
+
+Use `http://localhost:4318` only for code running directly on `hp-15` itself.
+
 Collect:
 
 ```text
@@ -43,24 +51,30 @@ health endpoint URL
 Ops Board OTLP endpoint
 ```
 
-For local testing, the OTLP endpoint is:
+## Python Package Setup
 
-```text
-http://localhost:4318
+Ops Board provides a small Python helper package. Add it to your project:
+
+```bash
+uv add "ops-board-observe @ git+https://github.com/Wenjun-Mao/ops-board.git#subdirectory=packages/ops-board-observe"
 ```
 
-Use this only from code running directly on the Ops Board host.
+To remove Ops Board later:
 
-For a remote tailnet machine, use:
-
-```text
-http://<ops-board-tailscale-hostname>:4318
+```bash
+uv remove ops-board-observe
 ```
 
-For the HP-15 deployment, use:
+Then import it from your project:
 
-```text
-http://hp-15:4318
+```python
+from ops_board_observe import bootstrap_observability, observe
+```
+
+Configure the endpoint through your project environment:
+
+```dotenv
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 ```
 
 ## Python Script Or Scheduled Job
@@ -68,9 +82,9 @@ http://hp-15:4318
 Use the decorator around the important unit of work:
 
 ```python
-from shared.ops_observe import bootstrap_observability, observe
+from ops_board_observe import bootstrap_observability, observe
 
-bootstrap_observability(service_name="my-job", service_namespace="my-project")
+bootstrap_observability()
 
 
 @observe("my-job.run")
@@ -110,7 +124,7 @@ environment:
   OPS_BOARD_SERVICE_NAMESPACE: my-project
   OPS_BOARD_ENVIRONMENT: prod
   OPS_BOARD_OWNER: team-name
-  OPS_BOARD_OTLP_ENDPOINT: http://<ops-board-tailscale-hostname>:4318
+  OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
 ```
 
 Use Docker logs plus SigNoz traces as the first debugging layer.

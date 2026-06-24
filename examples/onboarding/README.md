@@ -7,7 +7,7 @@ It covers two common shapes:
 - `dummy-job`: a scheduled or script-style Python job.
 - `dummy-api`: a Python web/API service with `/health`.
 
-Both examples use `shared/ops_observe.py`, a tiny local helper that prototypes a future Python onboarding library.
+The playground consumes `ops-board-observe` through a local path dependency. That keeps the demo aligned with the package colleagues install in real projects.
 
 ## Prerequisites
 
@@ -72,10 +72,10 @@ Expected:
 
 ## Tailscale Notes
 
-When a monitored project runs on another tailnet machine, set `OPS_BOARD_OTLP_ENDPOINT` to the Ops Board host's private address:
+The localhost values in this playground describe the local demo runtime. Real projects should follow `docs/onboarding/human-guide.md` and set the normal HP-15 OTLP endpoint:
 
-```bash
-export OPS_BOARD_OTLP_ENDPOINT="http://<ops-board-tailscale-hostname>:4318"
+```dotenv
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 ```
 
 ## Verify In SigNoz
@@ -102,10 +102,10 @@ Useful first checks:
 - Traces include spans named `dummy-job.run` and `dummy-job.process-record`.
 - Logs are present if OTLP log export is accepted by the collector.
 
-If the project runs on another tailnet machine, set:
+If the project runs on another tailnet machine, follow `docs/onboarding/human-guide.md` and set:
 
 ```dotenv
-OPS_BOARD_OTLP_ENDPOINT=http://<ops-board-tailscale-hostname>:4318
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 ```
 
 ## Full Verification Checklist

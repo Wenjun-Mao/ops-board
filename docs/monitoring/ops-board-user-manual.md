@@ -72,17 +72,17 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 4. Check span status, exception events, duration, and host attributes.
 5. Confirm the expected host and environment match the project docs.
 
-## Current Local Endpoints
+## Current Endpoints
 
-| Tool | Local URL | Tailnet URL Pattern |
-|------|-----------|---------------------|
-| Homepage | `http://localhost:3000` | `http://<host>:3000` |
-| Uptime Kuma | `http://localhost:3001` | `http://<host>:3001` |
-| SigNoz | `http://localhost:8080` | `http://<host>:8080` |
-| Plane | `http://localhost:8082` | `http://<host>:8082` |
-| OTLP HTTP | `http://localhost:4318` | `http://<host>:4318` |
+| Tool | Tailnet URL | Local URL on Ops Board host |
+|------|-------------|-----------------------------|
+| Homepage | `http://hp-15:3000` | `http://localhost:3000` |
+| Uptime Kuma | `http://hp-15:3001` | `http://localhost:3001` |
+| SigNoz | `http://hp-15:8080` | `http://localhost:8080` |
+| Plane | `http://hp-15:8082` | `http://localhost:8082` |
+| OTLP HTTP | `http://hp-15:4318` | `http://localhost:4318` |
 
-Use the Tailscale/MagicDNS hostname in `.env` for browser-facing URLs. On `HP-15`, use URLs such as `http://hp-15:3000` and `http://hp-15:8080`.
+Use tailnet URLs from colleague machines and onboarded project hosts. Use `localhost` only from a shell or browser running directly on `hp-15`.
 
 ## Day-1 Acceptance Smoke
 

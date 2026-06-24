@@ -34,21 +34,29 @@ Every onboarded project should expose or emit:
 
 ## Endpoint Conventions
 
-For local testing on the Ops Board host:
+For the HP-15 deployment, colleague projects and other tailnet machines should use:
 
 ```text
-SigNoz UI:          http://localhost:8080
-OTLP HTTP:         http://localhost:4318
-OTLP gRPC:         http://localhost:4317
-Collector health:  http://localhost:13133
-Uptime Kuma:       http://localhost:3001
-Homepage:          http://localhost:3000
-Plane:             http://localhost:8082
+OTLP HTTP:         http://hp-15:4318
+SigNoz UI:         http://hp-15:8080
+Uptime Kuma:       http://hp-15:3001
+Homepage:          http://hp-15:3000
+Plane:             http://hp-15:8082
 ```
 
-For other tailnet machines, replace `localhost` with the Ops Board host's Tailscale MagicDNS name or Tailscale IP.
+For local testing from a shell or browser running directly on `hp-15`, or for playground-local checks on that host, use:
 
-For the HP-15 deployment, remote tailnet clients should use `http://hp-15:4318` for OTLP HTTP and `http://hp-15:8080` for the SigNoz UI.
+```text
+OTLP HTTP (only for code running directly on hp-15 or playground-local checks): http://localhost:4318
+OTLP gRPC (only for code running directly on hp-15 or playground-local checks): http://localhost:4317
+Collector health:                                                        http://localhost:13133
+SigNoz UI:                                                               http://localhost:8080
+Uptime Kuma:                                                             http://localhost:3001
+Homepage:                                                                http://localhost:3000
+Plane:                                                                   http://localhost:8082
+```
+
+For non-HP-15 deployments, replace `hp-15` with the Ops Board host's Tailscale MagicDNS name or Tailscale IP.
 
 ## App Config Shape
 
@@ -69,30 +77,32 @@ runtime:
   country: CA
 
 ops_board:
-  otlp_endpoint: http://localhost:4318
+  otlp_endpoint: http://hp-15:4318
   health_url: http://localhost:8000/health
 ```
 
 ## Python Environment Variable Conventions
 
-Python projects using the v1 helper use the `OPS_BOARD_` prefix:
+The v1 Python integration contract is the `ops-board-observe` package. Projects install it as one dependency and import `ops_board_observe`. They should not copy helper files from the playground.
+
+Python projects using the v1 package use the `OPS_BOARD_` prefix:
 
 ```dotenv
 OPS_BOARD_SERVICE_NAME=example-api
 OPS_BOARD_SERVICE_NAMESPACE=ops-board.examples
 OPS_BOARD_ENVIRONMENT=local
 OPS_BOARD_OWNER=mk
-OPS_BOARD_OTLP_ENDPOINT=http://localhost:4318
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://localhost:8000/health
 OPS_BOARD_CONFIG_FILE=ops-board.yaml
 OPS_BOARD_SECRETS_DIR=/run/secrets
 ```
 
-The helper also sets standard OpenTelemetry resource attributes in process. Projects may still use standard `OTEL_*` variables when they outgrow the helper.
+The package also sets standard OpenTelemetry resource attributes in process. Projects may still use standard `OTEL_*` variables when they outgrow the package.
 
-## Python Helper Precedence
+## Python Package Config Precedence
 
-The v1 helper loads config in this order:
+The v1 package loads config in this order:
 
 1. Explicit function arguments
 2. Docker secret files from `OPS_BOARD_SECRETS_DIR` or `/run/secrets`
