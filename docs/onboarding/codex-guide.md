@@ -88,7 +88,7 @@ OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://billing-host.tailnet-name.ts.net:8000/health
 ```
 
-Before editing app code, verify the package reads the intended service name:
+Before editing app code, verify the package reads the intended service name. Run this from the target project root, after setting `OPS_BOARD_CONFIG_FILE`, or with the same `OPS_BOARD_*` environment variables used by Docker, CI, or the process manager:
 
 ```bash
 uv run python -c "from ops_board_observe import load_settings; print(load_settings().service_name)"
@@ -182,6 +182,7 @@ environment:
   OPS_BOARD_SERVICE_NAMESPACE: <namespace>
   OPS_BOARD_ENVIRONMENT: <environment>
   OPS_BOARD_OWNER: <owner>
+  OPS_BOARD_VERSION: 0.1.0
   OPS_BOARD_RUNTIME_HOST: <host>
   OPS_BOARD_TAILSCALE_HOST: <tailscale-host>
   OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
@@ -190,11 +191,13 @@ environment:
 
 ## Validation Commands
 
-If validation runs from a directory that does not contain `ops-board.yaml`, export the config path first:
+If using `ops-board.yaml` and validation runs outside the directory containing it, export the config path first:
 
 ```bash
 export OPS_BOARD_CONFIG_FILE=/absolute/path/to/ops-board.yaml
 ```
+
+For Docker Compose, CI, or process-manager deployments, validate with the intended `OPS_BOARD_*` environment instead.
 
 Run project tests:
 
