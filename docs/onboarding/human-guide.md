@@ -53,36 +53,96 @@ Ops Board OTLP endpoint
 
 ## Python Package Setup
 
-Ops Board provides a small Python helper package. Add it to your project:
+Do these steps from your project's root folder.
+
+### Step 1: Install The Package
 
 ```bash
 uv add "ops-board-observe @ git+https://github.com/Wenjun-Mao/ops-board.git#subdirectory=packages/ops-board-observe"
 ```
 
-Then import it from your project:
+### Step 2: Create `ops-board.yaml`
+
+Create this file at your project root:
+
+```text
+ops-board.yaml
+```
+
+For a script, scheduled job, or worker, start with this exact file and edit the names:
+
+```yaml
+service:
+  name: my-job
+  namespace: my-project
+  environment: prod
+  owner: team-name
+  version: 0.1.0
+
+runtime:
+  host: job-host
+  tailscale_host: job-host.tailnet-name.ts.net
+
+ops_board:
+  otlp_endpoint: http://hp-15:4318
+```
+
+For a web/API service with a health endpoint, use the same file and add `health_url`:
+
+```yaml
+service:
+  name: my-api
+  namespace: my-project
+  environment: prod
+  owner: team-name
+  version: 0.1.0
+
+runtime:
+  host: api-host
+  tailscale_host: api-host.tailnet-name.ts.net
+
+ops_board:
+  otlp_endpoint: http://hp-15:4318
+  health_url: http://api-host.tailnet-name.ts.net:8000/health
+```
+
+The package automatically reads `ops-board.yaml` when you run Python from the folder that contains it.
+
+If you run Python from a different folder, point to the file explicitly:
+
+```bash
+export OPS_BOARD_CONFIG_FILE=/absolute/path/to/ops-board.yaml
+```
+
+### Step 3: Check The Config Loads
+
+Run this from the same folder where you will start the app or job:
+
+```bash
+uv run python -c "from ops_board_observe import load_settings; print(load_settings().service_name)"
+```
+
+Expected for the job example:
+
+```text
+my-job
+```
+
+Expected for the API example:
+
+```text
+my-api
+```
+
+### Step 4: Import The Package
 
 ```python
 from ops_board_observe import bootstrap_observability, observe
 ```
 
-Before calling `bootstrap_observability()`, configure the minimum service identity. For services, also set the Tailscale host and health URL that HP-15 can reach.
-
-```dotenv
-OPS_BOARD_SERVICE_NAME=my-job
-OPS_BOARD_SERVICE_NAMESPACE=my-project
-OPS_BOARD_ENVIRONMENT=prod
-OPS_BOARD_OWNER=team-name
-OPS_BOARD_RUNTIME_HOST=<runtime-host>
-OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-
-# Optional for services that expose health over the tailnet:
-OPS_BOARD_TAILSCALE_HOST=<service-tailscale-host>
-OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:<port>/health
-```
-
 ## Python Script Or Scheduled Job
 
-Use the decorator around the important unit of work:
+After `ops-board.yaml` exists and the sanity check prints `my-job`, add observability near the job entrypoint.
 
 ```python
 from ops_board_observe import bootstrap_observability, observe
@@ -99,7 +159,7 @@ Run the job, then check SigNoz for `service.name = my-job`.
 
 ## Python Web/API Service
 
-For the API example below, use `OPS_BOARD_SERVICE_NAME=my-api` in the same minimum config block before starting the service.
+For the API example below, use the API `ops-board.yaml` example from Step 2 and confirm the sanity check prints `my-api`.
 
 Bootstrap observability once during application startup. For FastAPI, use lifespan:
 
@@ -138,9 +198,11 @@ def process_request(item_id: str) -> dict[str, str]:
 
 Then add the health URL to Uptime Kuma.
 
-## Dockerized App
+## Dockerized App Or CI
 
-Pass config through environment variables:
+For Docker Compose, CI, or a process manager, environment variables are usually easier than mounting `ops-board.yaml`.
+
+Use the same values as the YAML examples:
 
 ```yaml
 environment:
@@ -173,13 +235,16 @@ uv remove ops-board-observe
 
 ## Remote Tailscale Machine
 
-On the remote machine:
+1. Join the same tailnet as `hp-15`.
+2. From the project host, confirm it can reach the Ops Board collector:
 
-1. Join the same tailnet.
-2. Confirm it can reach the Ops Board collector.
-3. Configure `OPS_BOARD_OTLP_ENDPOINT`.
+   ```bash
+   curl -fsS --max-time 20 http://hp-15:13133/
+   ```
+
+3. Confirm `ops-board.yaml` uses `otlp_endpoint: http://hp-15:4318`, or confirm the process has `OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318`.
 4. Run the app or job.
-5. Check SigNoz from the Ops Board UI.
+5. Check SigNoz from `http://hp-15:8080`.
 
 Health checks can point either from Uptime Kuma to the remote service's tailnet URL, or from the service host back to Ops Board if the service cannot accept inbound checks.
 
