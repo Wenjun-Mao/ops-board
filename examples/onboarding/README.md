@@ -18,7 +18,7 @@ From the repo root:
 docker compose --env-file .env -f compose.yaml up -d
 ```
 
-Verify the collector is reachable:
+Verify the collector is reachable from the Ops Board host or playground-local machine:
 
 ```bash
 curl --fail --show-error --silent --max-time 20 http://localhost:13133/

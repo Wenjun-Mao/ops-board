@@ -60,6 +60,12 @@ OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:<port>/health
 ```
 
+Alternatively, create `ops-board.yaml` using the shape in `docs/onboarding/onboarding-contract.md` and set:
+
+```dotenv
+OPS_BOARD_CONFIG_FILE=ops-board.yaml
+```
+
 ## Script Or Scheduled Job Pattern
 
 Add bootstrap once near the entrypoint:
