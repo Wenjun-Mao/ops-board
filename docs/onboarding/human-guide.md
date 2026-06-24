@@ -210,6 +210,7 @@ environment:
   OPS_BOARD_SERVICE_NAMESPACE: my-project
   OPS_BOARD_ENVIRONMENT: prod
   OPS_BOARD_OWNER: team-name
+  OPS_BOARD_VERSION: 0.1.0
   OPS_BOARD_RUNTIME_HOST: api-host
   OPS_BOARD_TAILSCALE_HOST: api-host.tailnet-name.ts.net
   OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
