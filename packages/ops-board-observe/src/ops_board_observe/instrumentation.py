@@ -49,8 +49,9 @@ def bootstrap_observability(
 
     resource = Resource.create(_resource_attributes(settings))
     tracer_provider = TracerProvider(resource=resource)
-
     logger_provider = LoggerProvider(resource=resource)
+
+    _configure_stdlib_logging()
     if export:
         tracer_provider.add_span_processor(
             BatchSpanProcessor(
@@ -66,8 +67,6 @@ def bootstrap_observability(
 
     trace.set_tracer_provider(tracer_provider)
     set_logger_provider(logger_provider)
-
-    logging.basicConfig(level=logging.INFO)
 
     _BOOTSTRAPPED = True
     _SETTINGS = settings
@@ -184,6 +183,13 @@ def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
 
 def _optional_resource_attributes(values: Mapping[str, str | None]) -> dict[str, str]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _configure_stdlib_logging() -> None:
+    logging.basicConfig(level=logging.INFO)
+    root_logger = logging.getLogger()
+    if root_logger.getEffectiveLevel() > logging.INFO:
+        root_logger.setLevel(logging.INFO)
 
 
 def _attach_logging_handler(logger_provider: LoggerProvider) -> None:

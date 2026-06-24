@@ -97,6 +97,27 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
     assert handlers[0] is not first_handler
 
 
+def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+    root_logger = logging.getLogger()
+    original_level = root_logger.level
+    root_logger.setLevel(logging.WARNING)
+
+    try:
+        bootstrap_observability(
+            export=True,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+        assert root_logger.getEffectiveLevel() <= logging.INFO
+        assert logging.getLogger("ops_board_observe").isEnabledFor(logging.INFO)
+    finally:
+        root_logger.setLevel(original_level)
+
+
 def test_observe_emits_success_span_with_common_custom_and_duration_attributes() -> None:
     exporter = _configure_in_memory_tracing()
 
