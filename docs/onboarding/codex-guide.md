@@ -31,6 +31,8 @@ health_url
 
 For colleague projects running somewhere other than `hp-15`, use `http://hp-15:4318` as the normal OTLP endpoint. Use `localhost` only for code running directly on `hp-15` itself or for playground-local checks.
 
+Keep project-owner work separate from Ops Board maintainer/admin work. In the target project, add package config, health endpoints, tests, and telemetry. Do not create or edit Uptime Kuma monitors, Homepage entries, Plane workspaces, or Ops Board-side credentials unless the user explicitly says this Codex session is acting as the Ops Board maintainer/admin.
+
 ## Python App Changes
 
 If the target is Python, add the package to the target Python project:
@@ -213,6 +215,12 @@ Verify health endpoint:
 curl -fsS --max-time 20 <health-url>
 ```
 
+Record or report the health URL for the Ops Board maintainer/admin.
+
+> [!NOTE]
+> **Ops Board maintainer/admin step**
+> The maintainer/admin creates or confirms the Uptime Kuma HTTP monitor and any Homepage link. The target project only needs a reachable health URL and working telemetry.
+
 Verify Ops Board collector from the target host:
 
 ```bash
@@ -232,7 +240,8 @@ The target project is onboarded when:
 
 - Tests pass.
 - The health endpoint returns a successful response.
-- Uptime Kuma has or can create a monitor for the health endpoint.
+- The health URL is recorded for the Ops Board maintainer/admin.
+- The Ops Board maintainer/admin has enough information to create or confirm the Uptime Kuma monitor.
 - SigNoz shows at least one trace from the service or job.
 - Logs identify service, environment, owner, and runtime host.
 - Project docs mention Ops Board and the service identity.
