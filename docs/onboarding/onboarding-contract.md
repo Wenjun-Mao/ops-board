@@ -78,7 +78,7 @@ runtime:
 
 ops_board:
   otlp_endpoint: http://hp-15:4318
-  health_url: http://localhost:8000/health
+  health_url: http://<service-tailscale-host>:8000/health
 ```
 
 ## Python Environment Variable Conventions
@@ -93,7 +93,7 @@ OPS_BOARD_SERVICE_NAMESPACE=ops-board.examples
 OPS_BOARD_ENVIRONMENT=local
 OPS_BOARD_OWNER=mk
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-OPS_BOARD_HEALTH_URL=http://localhost:8000/health
+OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:8000/health
 OPS_BOARD_CONFIG_FILE=ops-board.yaml
 OPS_BOARD_SECRETS_DIR=/run/secrets
 ```

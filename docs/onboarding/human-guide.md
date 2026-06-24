@@ -59,22 +59,25 @@ Ops Board provides a small Python helper package. Add it to your project:
 uv add "ops-board-observe @ git+https://github.com/Wenjun-Mao/ops-board.git#subdirectory=packages/ops-board-observe"
 ```
 
-To remove Ops Board later:
-
-```bash
-uv remove ops-board-observe
-```
-
 Then import it from your project:
 
 ```python
 from ops_board_observe import bootstrap_observability, observe
 ```
 
-Configure the endpoint through your project environment:
+Before calling `bootstrap_observability()`, configure the minimum service identity. For services, also set the Tailscale host and health URL that HP-15 can reach.
 
 ```dotenv
+OPS_BOARD_SERVICE_NAME=my-job
+OPS_BOARD_SERVICE_NAMESPACE=my-project
+OPS_BOARD_ENVIRONMENT=prod
+OPS_BOARD_OWNER=team-name
+OPS_BOARD_RUNTIME_HOST=<runtime-host>
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
+
+# Optional for services that expose health over the tailnet:
+OPS_BOARD_TAILSCALE_HOST=<service-tailscale-host>
+OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:<port>/health
 ```
 
 ## Python Script Or Scheduled Job
@@ -95,6 +98,8 @@ def run_job() -> dict[str, str]:
 Run the job, then check SigNoz for `service.name = my-job`.
 
 ## Python Web/API Service
+
+For the API example below, use `OPS_BOARD_SERVICE_NAME=my-api` in the same minimum config block before starting the service.
 
 Expose a health endpoint:
 
@@ -124,10 +129,28 @@ environment:
   OPS_BOARD_SERVICE_NAMESPACE: my-project
   OPS_BOARD_ENVIRONMENT: prod
   OPS_BOARD_OWNER: team-name
+  OPS_BOARD_RUNTIME_HOST: api-host
+  OPS_BOARD_TAILSCALE_HOST: api-host.tailnet-name.ts.net
   OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
+  OPS_BOARD_HEALTH_URL: http://api-host.tailnet-name.ts.net:8000/health
 ```
 
 Use Docker logs plus SigNoz traces as the first debugging layer.
+
+## Removing Ops Board Later
+
+If the project stops reporting to Ops Board, remove the integration deliberately:
+
+1. Remove `ops_board_observe` imports, `bootstrap_observability()`, and `@observe(...)` decorators.
+2. Remove `OPS_BOARD_*` environment variables, config file entries, and Docker secrets.
+3. Remove the package:
+
+```bash
+uv remove ops-board-observe
+```
+
+4. Remove or update any Uptime Kuma monitor, Homepage link, or project docs link that was added for Ops Board.
+5. Run the project tests and a normal local start command.
 
 ## Remote Tailscale Machine
 

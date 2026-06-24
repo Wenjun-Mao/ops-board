@@ -81,6 +81,7 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 | SigNoz | `http://hp-15:8080` | `http://localhost:8080` |
 | Plane | `http://hp-15:8082` | `http://localhost:8082` |
 | OTLP HTTP | `http://hp-15:4318` | `http://localhost:4318` |
+| Collector health | `http://hp-15:13133` | `http://localhost:13133` |
 
 Use tailnet URLs from colleague machines and onboarded project hosts. Use `localhost` only from a shell or browser running directly on `hp-15`.
 

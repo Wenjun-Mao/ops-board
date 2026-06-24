@@ -57,7 +57,7 @@ OPS_BOARD_OWNER=<owner>
 OPS_BOARD_RUNTIME_HOST=<host>
 OPS_BOARD_TAILSCALE_HOST=<tailscale-host>
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-OPS_BOARD_HEALTH_URL=http://<service-host>:<port>/health
+OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:<port>/health
 ```
 
 ## Script Or Scheduled Job Pattern
@@ -79,6 +79,12 @@ def run_job() -> dict[str, str]:
 ```
 
 Network requests or external I/O must use `tenacity` retries:
+
+If the target project imports `tenacity` directly for this retry snippet, add it as a direct dependency even though `ops-board-observe` owns its own helper dependencies:
+
+```bash
+uv add tenacity
+```
 
 ```python
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -120,7 +126,7 @@ environment:
   OPS_BOARD_RUNTIME_HOST: <host>
   OPS_BOARD_TAILSCALE_HOST: <tailscale-host>
   OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
-  OPS_BOARD_HEALTH_URL: http://<service-host>:<port>/health
+  OPS_BOARD_HEALTH_URL: http://<service-tailscale-host>:<port>/health
 ```
 
 ## Validation Commands
