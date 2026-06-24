@@ -101,8 +101,12 @@ When a project uses environment variables instead of `ops-board.yaml`, it uses t
 
 ```dotenv
 OPS_BOARD_SERVICE_NAME=example-api
-OPS_BOARD_VERSION=0.1.0
+OPS_BOARD_SERVICE_NAMESPACE=ops-board.examples
 OPS_BOARD_ENVIRONMENT=local
+OPS_BOARD_OWNER=mk
+OPS_BOARD_VERSION=0.1.0
+OPS_BOARD_RUNTIME_HOST=example-host
+OPS_BOARD_TAILSCALE_HOST=example-host.tailnet-name.ts.net
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
 OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:8000/health
 ```
