@@ -16,7 +16,7 @@ Manual monitor creation is a fallback when the bootstrap script cannot run. Use 
 
 ## Status Page
 
-Create one public status page inside Uptime Kuma:
+Create one status page inside Uptime Kuma:
 
 ```text
 Slug: ops-board

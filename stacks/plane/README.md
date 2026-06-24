@@ -25,13 +25,13 @@ The local `plane.env` uses ignored secret files created by `scripts/init-local-c
 
 ## Access
 
-Local:
+From the deployment host:
 
 ```text
 http://localhost:8082
 ```
 
-Tailnet:
+From another tailnet device, use the host's Tailscale/MagicDNS name:
 
 ```text
 http://<tailscale-hostname>:8082

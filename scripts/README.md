@@ -224,4 +224,4 @@ The transition PowerShell scripts mirror the older Windows workflow:
 .\scripts\update-stack.ps1
 ```
 
-Prefer the Linux scripts for new operator docs, examples, and deployment runs.
+This compatibility path is local-only and does not support the Linux `--host` URL rewrite. Prefer the Linux scripts for new operator docs, examples, HP-15 validation, and deployment runs.

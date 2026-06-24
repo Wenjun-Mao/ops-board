@@ -12,13 +12,13 @@ docker compose --env-file .env -f stacks/uptime-kuma/compose.yaml up -d
 ./scripts/bootstrap-uptime-kuma.sh
 ```
 
-Open:
+Open from the deployment host:
 
 ```text
 http://localhost:3001
 ```
 
-From another tailnet device, use:
+From another tailnet device, use the host's Tailscale/MagicDNS name:
 
 ```text
 http://<tailscale-hostname>:3001

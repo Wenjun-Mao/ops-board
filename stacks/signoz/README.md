@@ -13,13 +13,13 @@ docker compose --env-file .env -f stacks/signoz/compose.yaml up -d
 
 Compose variables live in the repo root `.env`. Secret values live in ignored files under `secrets/` and are mounted with Docker secrets. This stack declares `name: signoz`, so direct Compose commands do not need `-p signoz`.
 
-Open UI:
+Open the UI from the deployment host:
 
 ```text
 http://localhost:8080
 ```
 
-From another device on the same Tailscale tailnet:
+From another device on the same Tailscale tailnet, use the host's Tailscale/MagicDNS name:
 
 ```text
 http://<tailscale-hostname>:8080

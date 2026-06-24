@@ -11,13 +11,13 @@ From the repo root:
 docker compose --env-file .env -f stacks/homepage/compose.yaml up -d
 ```
 
-Open:
+Open from the deployment host:
 
 ```text
 http://localhost:3000
 ```
 
-From another tailnet device:
+From another tailnet device, use the host's Tailscale/MagicDNS name:
 
 ```text
 http://<tailscale-hostname>:3000
