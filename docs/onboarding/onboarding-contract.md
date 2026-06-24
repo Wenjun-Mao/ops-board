@@ -25,12 +25,21 @@ Every onboarded project should expose or emit:
 
 | Signal | Tool | Required | Purpose |
 |--------|------|----------|---------|
-| Health endpoint | Uptime Kuma | Yes for services, recommended for long-running workers | Answers whether it is alive right now. |
+| Health endpoint | Project plus Uptime Kuma | Yes for services, recommended for long-running workers | Project exposes it; Ops Board maintainer/admin monitors it. |
 | Traces | SigNoz | Yes for APIs and important jobs | Shows what happened inside a request or job run. |
 | Logs | SigNoz or Docker logs | Recommended | Provides context around failures and important events. |
 | Metrics | SigNoz | Optional for v1 | Useful after the basic health/tracing flow works. |
 | Operator links | Homepage | Recommended | Gives teammates one place to start. |
 | Follow-up tasks | Plane | Optional | Tracks work after an issue becomes actionable. |
+
+## Role Ownership
+
+| Role | Owns | Does not need to own |
+|------|------|----------------------|
+| Project owner or colleague | Project package install, `ops-board.yaml` or `OPS_BOARD_*` values, health endpoint, app/job telemetry, project docs for owner and runtime host | Uptime Kuma monitor creation, Homepage entries, Plane workspace/admin setup, Ops Board credentials |
+| Ops Board maintainer/admin | Uptime Kuma monitors, Homepage entries, Ops Board-side links, SigNoz and Plane admin/workspace setup, monitor naming and status-page placement | Target project code unless explicitly helping with onboarding |
+
+When a person is wearing both hats, they may do both sets of work. The docs should still label Ops Board maintainer/admin steps so the handoff is visible.
 
 ## Endpoint Conventions
 
@@ -143,12 +152,12 @@ A project is onboarded when all required items are true:
 
 - It has a stable service name, namespace, environment, and owner.
 - It documents where it runs and how it reaches Ops Board over Tailscale.
-- A long-running service exposes a health endpoint.
-- Uptime Kuma can monitor that health endpoint.
+- A long-running service exposes a health endpoint and the health URL is recorded.
+- The Ops Board maintainer/admin can create or confirm the Uptime Kuma monitor for that health endpoint.
 - A Python job or key function emits an observed span with success/failure status.
 - A web/API service emits request-level traces or observed key-function spans.
 - Logs include enough context to identify service, host, environment, and run/request.
-- A teammate can find the project from docs or Homepage.
+- A teammate can find the project from project docs, and the Ops Board maintainer/admin has enough information to add or update Homepage when needed.
 
 ## Evidence Checklist
 
@@ -157,4 +166,4 @@ After onboarding, capture or link concise evidence for:
 - Config evidence: service identity, runtime host, Tailscale host, OTLP endpoint, and health URL are present in env, secrets, compose, or project docs.
 - App/job run evidence: at least one successful app request or job run completed with the onboarded config.
 - SigNoz evidence: traces and logs identify the expected service name, environment, owner, and runtime host.
-- Health monitor evidence: when a health endpoint exists, Uptime Kuma or the chosen monitor can reach it successfully.
+- Health monitor evidence: when a health endpoint exists, the Ops Board maintainer/admin confirms Uptime Kuma or the chosen monitor can reach it successfully.
