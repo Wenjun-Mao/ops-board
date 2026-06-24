@@ -339,6 +339,13 @@ def _attach_logging_handler(logger_provider: LoggerProvider) -> None:
         if isinstance(handler, LoggingHandler) and getattr(handler, _LOGGING_HANDLER_MARKER, False):
             _LOGGING_HANDLER = handler
             return
+        if isinstance(handler, LoggingHandler):
+            raise RuntimeError(
+                "OpenTelemetry logging handler is already attached before Ops Board "
+                "observability bootstrap. Remove the host-owned handler, configure "
+                "Ops Board observability first, or let the host application own "
+                "observability bootstrap."
+            )
 
     with warnings.catch_warnings():
         warnings.filterwarnings(

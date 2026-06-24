@@ -21,7 +21,7 @@ The public helper API is:
 
 Runtime docs use `http://hp-15:4318` as the default colleague endpoint. `localhost` is only for commands running directly on HP-15 or in a local playground.
 
-`bootstrap_observability` is first-call-wins inside a process. Repeated calls with identical effective settings and the same `export` flag return the active settings without reinstalling providers or duplicate handlers. Repeated calls with different settings or a different `export` flag raise `RuntimeError`. Bootstrap also rejects preconfigured process-global OpenTelemetry tracer or logger providers so it does not claim success while another provider remains active.
+`bootstrap_observability` is first-call-wins inside a process. Repeated calls with identical effective settings and the same `export` flag return the active settings without reinstalling providers or duplicate handlers. Repeated calls with different settings or a different `export` flag raise `RuntimeError`. Bootstrap also rejects preconfigured process-global OpenTelemetry tracer or logger providers and pre-existing host-owned OTel logging handlers so it does not claim success while another provider or log pipeline remains active.
 
 `export=False` is the no-export/test path and avoids OTLP exporters, OTel logging handlers, and root logging level changes. `export=True` configures OTLP traces and logs, attaches the OTel logging handler once, and enables INFO-level application logs for that handler.
 
@@ -30,13 +30,14 @@ Resource metadata includes standard service fields plus `service.owner`.
 ## Rejected Alternatives
 
 - Keep the copied playground helper: rejected because it preserves manual onboarding, dependency drift, and broken imports in separate projects.
-- Silently compose with pre-existing host OpenTelemetry providers: rejected because OTel providers are process-global and set-once, so silent composition can claim success while another provider owns export behavior.
+- Silently compose with pre-existing host OpenTelemetry providers or logging handlers: rejected because OTel providers are process-global and set-once, and OTel logging handlers wire stdlib logs to a provider-owned pipeline. Silent composition can claim success while another owner controls export behavior.
 - Allow in-process reconfiguration: rejected because changing settings, exporters, providers, or logging handlers after bootstrap can leave traces and logs using different runtime contracts. Hosts should restart the process, and tests should use the explicit reset helper.
 
 ## Guardrails
 
 - Package tests cover settings precedence, bootstrap conflict and reconfiguration behavior, provider rollback and cleanup, `export=False` side effects, OTel logging handler wiring, and span emission.
 - `OTEL_PYTHON_TRACER_PROVIDER` and `OTEL_PYTHON_LOGGER_PROVIDER` count as host-owned provider intent and must be rejected before Ops Board installs providers.
+- Pre-existing unmarked OTel `LoggingHandler` instances count as host-owned logging pipeline setup and must be rejected before Ops Board attaches its handler.
 - Docs and playground workflows should import and install `ops-board-observe` instead of copying helper code.
 - Any future host-provider composition must update this ADR or add a replacement ADR before relaxing the first-call-wins/provider-conflict contract.
 

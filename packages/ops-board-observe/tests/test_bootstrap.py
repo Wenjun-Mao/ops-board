@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
@@ -80,6 +81,36 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
     handlers = otel_logging_handlers()
     assert len(handlers) == 1
     assert handlers[0] is not first_handler
+
+
+def test_bootstrap_rejects_preexisting_unmarked_otel_logging_handler(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_noop_otlp_exporters(monkeypatch)
+    root_logger = logging.getLogger()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="`LoggingHandler` in `opentelemetry-sdk` is deprecated.*",
+            category=DeprecationWarning,
+        )
+        host_handler = LoggingHandler(logger_provider=LoggerProvider())
+    root_logger.addHandler(host_handler)
+
+    try:
+        with pytest.raises(RuntimeError, match="OpenTelemetry logging handler"):
+            bootstrap_for_test(export=True)
+
+        assert otel_logging_handlers() == [host_handler]
+        root_logger.removeHandler(host_handler)
+        host_handler.close()
+
+        assert bootstrap_for_test(export=True).service_name == "unit-service"
+        assert len(otel_logging_handlers()) == 1
+    finally:
+        if host_handler in root_logger.handlers:
+            root_logger.removeHandler(host_handler)
+            host_handler.close()
 
 
 def test_concurrent_identical_bootstrap_calls_share_one_active_bootstrap(
