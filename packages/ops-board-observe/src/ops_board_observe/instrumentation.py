@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
+import threading
 import time
 import warnings
 from collections.abc import Awaitable, Callable, Mapping
@@ -29,6 +30,7 @@ _BOOTSTRAPPED = False
 _SETTINGS: OpsBoardSettings | None = None
 _EXPORT_ENABLED: bool | None = None
 _LOGGING_HANDLER: LoggingHandler | None = None
+_BOOTSTRAP_LOCK = threading.RLock()
 
 _LOGGER = logging.getLogger("ops_board_observe")
 _LOGGING_HANDLER_MARKER = "_ops_board_observe_logging_handler"
@@ -43,6 +45,11 @@ def bootstrap_observability(
 ) -> OpsBoardSettings:
     settings = load_settings(config_path=config_path, **overrides)
 
+    with _BOOTSTRAP_LOCK:
+        return _bootstrap_observability_locked(settings, export)
+
+
+def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) -> OpsBoardSettings:
     global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
     if _BOOTSTRAPPED:
         _validate_rebootstrap(settings, export)
@@ -166,11 +173,12 @@ def _otlp_signal_endpoint(base_endpoint: str, signal: str) -> str:
 
 def _reset_for_tests() -> None:
     global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
-    _detach_logging_handler()
-    _BOOTSTRAPPED = False
-    _SETTINGS = None
-    _EXPORT_ENABLED = None
-    _reset_opentelemetry_globals_for_tests()
+    with _BOOTSTRAP_LOCK:
+        _detach_logging_handler()
+        _BOOTSTRAPPED = False
+        _SETTINGS = None
+        _EXPORT_ENABLED = None
+        _reset_opentelemetry_globals_for_tests()
 
 
 def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
@@ -179,7 +187,7 @@ def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
         "service.namespace": settings.service_namespace,
         "service.version": settings.version,
         "deployment.environment": settings.environment,
-        "ops_board.owner": settings.owner,
+        "service.owner": settings.owner,
         "host.name": settings.runtime_host,
         **_optional_resource_attributes(
             {

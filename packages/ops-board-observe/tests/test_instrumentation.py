@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 
 from opentelemetry import trace
-from opentelemetry.sdk._logs import LoggingHandler
+from opentelemetry._logs import get_logger_provider, set_logger_provider
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import LogExportResult
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExportResult
@@ -104,6 +107,27 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
     assert handlers[0] is not first_handler
 
 
+def test_concurrent_identical_bootstrap_calls_share_one_active_bootstrap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_slow_noop_otlp_exporters(monkeypatch)
+
+    def call_bootstrap() -> object:
+        return bootstrap_observability(
+            export=True,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        settings = list(executor.map(lambda _: call_bootstrap(), range(8)))
+
+    assert all(setting is settings[0] for setting in settings)
+    assert len(_otel_logging_handlers()) == 1
+
+
 def test_bootstrap_export_false_then_export_true_raises_without_adding_handler(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -165,6 +189,23 @@ def test_bootstrap_rejects_external_preconfigured_tracer_provider() -> None:
     assert trace.get_tracer_provider() is external_provider
 
 
+def test_bootstrap_rejects_external_preconfigured_logger_provider() -> None:
+    external_provider = LoggerProvider()
+    set_logger_provider(external_provider)
+
+    with pytest.raises(RuntimeError, match="OpenTelemetry logger provider"):
+        bootstrap_observability(
+            export=False,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+    assert instrumentation._BOOTSTRAPPED is False
+    assert get_logger_provider() is external_provider
+
+
 def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_noop_otlp_exporters(monkeypatch)
     root_logger = logging.getLogger()
@@ -184,6 +225,29 @@ def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pyte
         assert logging.getLogger("ops_board_observe").isEnabledFor(logging.INFO)
     finally:
         root_logger.setLevel(original_level)
+
+
+def test_bootstrap_resource_attributes_use_service_owner() -> None:
+    bootstrap_observability(
+        export=False,
+        service_name="unit-service",
+        service_namespace="unit-namespace",
+        owner="unit-owner",
+        otlp_endpoint="http://hp-15:4318",
+    )
+    provider = trace.get_tracer_provider()
+    exporter = InMemorySpanExporter()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+
+    @observe("unit.resource")
+    def run() -> str:
+        return "ok"
+
+    assert run() == "ok"
+
+    span = _only_span(exporter)
+    assert span.resource.attributes["service.owner"] == "unit-owner"
+    assert "ops_board.owner" not in span.resource.attributes
 
 
 def test_observe_emits_success_span_with_common_custom_and_duration_attributes() -> None:
@@ -288,6 +352,11 @@ def _install_noop_otlp_exporters(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(instrumentation, "OTLPLogExporter", _NoopLogExporter)
 
 
+def _install_slow_noop_otlp_exporters(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(instrumentation, "OTLPSpanExporter", _SlowNoopSpanExporter)
+    monkeypatch.setattr(instrumentation, "OTLPLogExporter", _SlowNoopLogExporter)
+
+
 class _NoopSpanExporter:
     def __init__(self, *args: object, **kwargs: object) -> None:
         pass
@@ -314,3 +383,15 @@ class _NoopLogExporter:
 
     def force_flush(self, *args: object, **kwargs: object) -> bool:
         return True
+
+
+class _SlowNoopSpanExporter(_NoopSpanExporter):
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        time.sleep(0.05)
+        super().__init__(*args, **kwargs)
+
+
+class _SlowNoopLogExporter(_NoopLogExporter):
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        time.sleep(0.05)
+        super().__init__(*args, **kwargs)
