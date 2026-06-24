@@ -39,16 +39,17 @@ def _read_text(path: Path) -> str:
 
 
 def load_settings(config_path: str | Path | None = None, **overrides: Any) -> OpsBoardSettings:
+    normalized_overrides = _normalize_settings_values(overrides)
     config_values = _load_config_values(_resolve_config_path(config_path))
     env_values = _environment_values()
-    secrets_dir = _resolve_secrets_dir(config_values, env_values, overrides)
+    secrets_dir = _resolve_secrets_dir(config_values, env_values, normalized_overrides)
     secret_values = _secret_values(secrets_dir)
 
     values: dict[str, Any] = {}
     values.update(config_values)
     values.update(env_values)
     values.update(secret_values)
-    values.update(overrides)
+    values.update(normalized_overrides)
     return OpsBoardSettings(**values)
 
 
@@ -142,3 +143,11 @@ def _secret_values(secrets_dir: Path) -> dict[str, str]:
 
 def _without_none(values: Mapping[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _normalize_settings_values(values: Mapping[str, Any]) -> dict[str, Any]:
+    normalized = dict(values)
+    secrets_dir = normalized.get("secrets_dir")
+    if isinstance(secrets_dir, os.PathLike):
+        normalized["secrets_dir"] = str(secrets_dir)
+    return normalized

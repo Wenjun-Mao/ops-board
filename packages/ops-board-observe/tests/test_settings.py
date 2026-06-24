@@ -106,6 +106,86 @@ def test_settings_defaults_are_safe_for_local_tests(
     assert settings.otlp_endpoint == "http://localhost:4318"
 
 
+def test_load_settings_accepts_path_like_secrets_dir_override(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_ops_board_env(monkeypatch)
+    _, load_settings = _settings_api()
+    secrets_dir = tmp_path / "secrets"
+    secrets_dir.mkdir()
+    (secrets_dir / "service_name").write_text("secret-path-service", encoding="utf-8")
+
+    settings = load_settings(secrets_dir=secrets_dir)
+
+    assert settings.service_name == "secret-path-service"
+    assert settings.secrets_dir == str(secrets_dir)
+
+
+def test_load_settings_uses_env_config_file_when_explicit_path_absent(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_ops_board_env(monkeypatch)
+    _, load_settings = _settings_api()
+    config_path = tmp_path / "custom-ops-board.yaml"
+    config_path.write_text(
+        textwrap.dedent(
+            """
+            service:
+              name: env-config-service
+              namespace: env-config-namespace
+            ops_board:
+              otlp_endpoint: http://env-config-collector:4318
+            """
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("OPS_BOARD_CONFIG_FILE", str(config_path))
+
+    settings = load_settings()
+
+    assert settings.service_name == "env-config-service"
+    assert settings.service_namespace == "env-config-namespace"
+    assert settings.otlp_endpoint == "http://env-config-collector:4318"
+
+
+def test_load_settings_auto_loads_default_config_file_when_it_exists(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_ops_board_env(monkeypatch)
+    _, load_settings = _settings_api()
+    monkeypatch.chdir(tmp_path)
+    Path("ops-board.yaml").write_text(
+        textwrap.dedent(
+            """
+            service:
+              name: cwd-config-service
+            runtime:
+              provider: local-dev
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    settings = load_settings()
+
+    assert settings.service_name == "cwd-config-service"
+    assert settings.runtime_provider == "local-dev"
+
+
+def test_load_settings_without_default_config_file_keeps_safe_defaults(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_ops_board_env(monkeypatch)
+    _, load_settings = _settings_api()
+    monkeypatch.chdir(tmp_path)
+
+    settings = load_settings()
+
+    assert settings.service_name == "unknown-service"
+    assert settings.service_namespace == "default"
+    assert settings.environment == "local"
+
+
 def test_invalid_config_file_shape_raises(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
