@@ -156,6 +156,8 @@ Run project tests:
 uv run pytest -v
 ```
 
+Add or adjust tests for package-flow onboarding changes. Unit tests should exercise observability setup with telemetry export disabled or with the exporter mocked; ordinary unit tests must not depend on live OTLP, SigNoz, or network reachability.
+
 Verify health endpoint:
 
 ```bash

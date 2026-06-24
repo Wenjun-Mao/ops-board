@@ -132,3 +132,12 @@ A project is onboarded when all required items are true:
 - A web/API service emits request-level traces or observed key-function spans.
 - Logs include enough context to identify service, host, environment, and run/request.
 - A teammate can find the project from docs or Homepage.
+
+## Evidence Checklist
+
+After onboarding, capture or link concise evidence for:
+
+- Config evidence: service identity, runtime host, Tailscale host, OTLP endpoint, and health URL are present in env, secrets, compose, or project docs.
+- App/job run evidence: at least one successful app request or job run completed with the onboarded config.
+- SigNoz evidence: traces and logs identify the expected service name, environment, owner, and runtime host.
+- Health monitor evidence: when a health endpoint exists, Uptime Kuma or the chosen monitor can reach it successfully.
