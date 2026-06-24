@@ -23,8 +23,7 @@ For v1, onboarding means:
 - The project has a stable service name.
 - The owner and environment are clear.
 - The runtime host is documented.
-- Long-running services have a health endpoint.
-- Long-running services provide a health endpoint that the Ops Board maintainer/admin can monitor.
+- Long-running services expose a health endpoint and share the URL with the Ops Board maintainer/admin.
 - Python jobs or key functions can emit observed spans.
 - SigNoz can show useful traces or logs.
 
