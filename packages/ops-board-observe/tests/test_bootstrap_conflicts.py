@@ -113,6 +113,35 @@ def test_bootstrap_export_false_rejects_preexisting_unmarked_otel_logging_handle
         _remove_handler_if_attached(root_logger, host_handler)
 
 
+def test_bootstrap_export_false_rejects_named_logger_unmarked_otel_logging_handler() -> None:
+    named_logger = logging.getLogger("ops_board_observe_tests.host")
+    host_handler = _new_unmarked_otel_logging_handler()
+    named_logger.addHandler(host_handler)
+
+    try:
+        with pytest.raises(RuntimeError, match="OpenTelemetry logging handler"):
+            bootstrap_for_test(export=False)
+
+        assert named_logger.handlers == [host_handler]
+    finally:
+        _remove_handler_if_attached(named_logger, host_handler)
+
+
+def test_bootstrap_export_true_rejects_named_logger_unmarked_otel_logging_handler() -> None:
+    named_logger = logging.getLogger("ops_board_observe_tests.host_export")
+    host_handler = _new_unmarked_otel_logging_handler()
+    named_logger.addHandler(host_handler)
+
+    try:
+        with pytest.raises(RuntimeError, match="OpenTelemetry logging handler"):
+            bootstrap_for_test(export=True)
+
+        assert named_logger.handlers == [host_handler]
+        assert otel_logging_handlers() == []
+    finally:
+        _remove_handler_if_attached(named_logger, host_handler)
+
+
 def test_bootstrap_rolls_back_provider_globals_after_logging_handler_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -269,14 +269,25 @@ def _ensure_no_otel_provider_env_conflicts() -> None:
 
 
 def _ensure_no_host_otel_logging_handler_conflicts() -> None:
-    for handler in logging.getLogger().handlers:
-        if isinstance(handler, LoggingHandler) and not getattr(handler, _LOGGING_HANDLER_MARKER, False):
-            raise RuntimeError(
-                "OpenTelemetry logging handler is already attached before Ops Board "
-                "observability bootstrap. Remove the host-owned handler, configure "
-                "Ops Board observability first, or let the host application own "
-                "observability bootstrap."
-            )
+    for logger in _configured_stdlib_loggers():
+        for handler in logger.handlers:
+            if isinstance(handler, LoggingHandler) and not getattr(handler, _LOGGING_HANDLER_MARKER, False):
+                raise RuntimeError(
+                    "OpenTelemetry logging handler is already attached before Ops Board "
+                    "observability bootstrap. Remove the host-owned handler, configure "
+                    "Ops Board observability first, or let the host application own "
+                    "observability bootstrap."
+                )
+
+
+def _configured_stdlib_loggers() -> list[logging.Logger]:
+    root_logger = logging.getLogger()
+    named_loggers = [
+        logger
+        for logger in root_logger.manager.loggerDict.values()
+        if isinstance(logger, logging.Logger)
+    ]
+    return [root_logger, *named_loggers]
 
 
 def _ensure_active_otel_providers(
