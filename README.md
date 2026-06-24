@@ -236,6 +236,7 @@ Use these docs when operating the board or connecting projects to it:
 - `docs/monitoring/first-run-accounts.md` - SigNoz and Plane first admin/workspace setup checklist.
 - `docs/onboarding/human-guide.md` - why and how colleagues should onboard projects.
 - `docs/onboarding/onboarding-contract.md` - stable service identity and telemetry contract.
+- `docs/onboarding/onboarding-design-playbook.md` - reusable lessons for designing future onboarding flows.
 - `docs/onboarding/codex-guide.md` - machine-friendly onboarding instructions for Codex sessions.
 - `examples/onboarding/README.md` - dummy API/job playground for testing the experience.
 

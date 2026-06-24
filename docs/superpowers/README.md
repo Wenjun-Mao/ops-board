@@ -12,6 +12,7 @@ Use these current docs instead:
 - `docs/monitoring/first-run-accounts.md`
 - `docs/onboarding/human-guide.md`
 - `docs/onboarding/onboarding-contract.md`
+- `docs/onboarding/onboarding-design-playbook.md`
 - `docs/onboarding/codex-guide.md`
 - `stacks/*/README.md`
 
