@@ -24,7 +24,7 @@ For v1, onboarding means:
 - The owner and environment are clear.
 - The runtime host is documented.
 - Long-running services have a health endpoint.
-- Uptime Kuma can monitor that health endpoint.
+- Long-running services provide a health endpoint that the Ops Board maintainer/admin can monitor.
 - Python jobs or key functions can emit observed spans.
 - SigNoz can show useful traces or logs.
 
@@ -196,7 +196,11 @@ def process_request(item_id: str) -> dict[str, str]:
     return {"item_id": item_id, "status": "processed"}
 ```
 
-Then open Uptime Kuma at `http://hp-15:3001` and create an HTTP monitor for the health URL. See `docs/monitoring/ops-board-user-manual.md` for the monitor workflow and context.
+Confirm the health endpoint returns a successful response from a tailnet machine, then share the health URL with the Ops Board maintainer/admin.
+
+> [!NOTE]
+> **Ops Board maintainer/admin step**
+> The colleague onboarding the project only needs to provide the health URL and confirm it returns a successful response. The Ops Board maintainer/admin creates or confirms the Uptime Kuma HTTP monitor from `http://hp-15:3001`; the maintainer workflow lives in `docs/monitoring/ops-board-user-manual.md`.
 
 ## Dockerized App Or CI
 
@@ -247,7 +251,7 @@ If the project stops reporting to Ops Board, remove the integration deliberately
 uv remove ops-board-observe
 ```
 
-4. Remove or update any Uptime Kuma monitor, Homepage link, or project docs link that was added for Ops Board.
+4. Tell the Ops Board maintainer/admin whether the Uptime Kuma monitor, Homepage link, or Ops Board-side references should be removed or updated.
 5. Run the project tests and a normal local start command.
 
 ## Remote Tailscale Machine
@@ -265,16 +269,24 @@ uv remove ops-board-observe
 
 Health checks can point either from Uptime Kuma to the remote service's tailnet URL, or from the service host back to Ops Board if the service cannot accept inbound checks.
 
+> [!NOTE]
+> **Ops Board maintainer/admin step**
+> The maintainer/admin chooses the monitor direction and Uptime Kuma settings. The colleague provides the reachable health URL, or explains why inbound tailnet checks are not possible.
+
 ## First Success Test
 
-After onboarding, prove these checks:
+After onboarding, prove the project-owner checks:
 
 ```text
-Uptime Kuma can see the health endpoint.
+The health endpoint returns a successful response.
 SigNoz can see at least one trace from the project.
-The docs say who owns the project.
-The docs say where the project runs.
+The project docs say who owns the project.
+The project docs say where the project runs.
 ```
+
+> [!NOTE]
+> **Ops Board maintainer/admin step**
+> The Ops Board maintainer/admin confirms Uptime Kuma can monitor the health endpoint and that Ops Board-side links or references are in the right place.
 
 ## Example Playground
 
