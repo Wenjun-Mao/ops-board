@@ -47,23 +47,57 @@ If it is a FastAPI app, also ensure:
 uv add fastapi uvicorn
 ```
 
-Add config through env vars:
+Prefer `ops-board.yaml` for first onboarding unless the target already deploys through Docker, CI, or a process manager.
 
-```dotenv
-OPS_BOARD_SERVICE_NAME=<service-name>
-OPS_BOARD_SERVICE_NAMESPACE=<namespace>
-OPS_BOARD_ENVIRONMENT=<environment>
-OPS_BOARD_OWNER=<owner>
-OPS_BOARD_RUNTIME_HOST=<host>
-OPS_BOARD_TAILSCALE_HOST=<tailscale-host>
-OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:<port>/health
+Create `ops-board.yaml` at the target project root:
+
+```yaml
+service:
+  name: billing-api
+  namespace: billing
+  environment: prod
+  owner: data-team
+  version: 0.1.0
+
+runtime:
+  host: billing-host
+  tailscale_host: billing-host.tailnet-name.ts.net
+
+ops_board:
+  otlp_endpoint: http://hp-15:4318
+  health_url: http://billing-host.tailnet-name.ts.net:8000/health
 ```
 
-Alternatively, create `ops-board.yaml` using the shape in `docs/onboarding/onboarding-contract.md` and set:
+The package reads `ops-board.yaml` automatically when the app starts from that directory. If the app starts from another working directory, set:
+
+```bash
+export OPS_BOARD_CONFIG_FILE=/absolute/path/to/ops-board.yaml
+```
+
+For Docker Compose, CI, or a process manager, use equivalent environment variables instead:
 
 ```dotenv
-OPS_BOARD_CONFIG_FILE=ops-board.yaml
+OPS_BOARD_SERVICE_NAME=billing-api
+OPS_BOARD_SERVICE_NAMESPACE=billing
+OPS_BOARD_ENVIRONMENT=prod
+OPS_BOARD_OWNER=data-team
+OPS_BOARD_VERSION=0.1.0
+OPS_BOARD_RUNTIME_HOST=billing-host
+OPS_BOARD_TAILSCALE_HOST=billing-host.tailnet-name.ts.net
+OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
+OPS_BOARD_HEALTH_URL=http://billing-host.tailnet-name.ts.net:8000/health
+```
+
+Before editing app code, verify the package reads the intended service name:
+
+```bash
+uv run python -c "from ops_board_observe import load_settings; print(load_settings().service_name)"
+```
+
+Expected for the example above:
+
+```text
+billing-api
 ```
 
 ## Script Or Scheduled Job Pattern
@@ -155,6 +189,12 @@ environment:
 ```
 
 ## Validation Commands
+
+If validation runs from a directory that does not contain `ops-board.yaml`, export the config path first:
+
+```bash
+export OPS_BOARD_CONFIG_FILE=/absolute/path/to/ops-board.yaml
+```
 
 Run project tests:
 
