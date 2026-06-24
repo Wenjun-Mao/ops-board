@@ -4,6 +4,7 @@ import functools
 import inspect
 import logging
 import time
+import warnings
 from collections.abc import Awaitable, Callable, Mapping
 from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast
@@ -12,7 +13,7 @@ from opentelemetry import trace
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk._logs import LoggerProvider
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -26,8 +27,10 @@ R = TypeVar("R")
 
 _BOOTSTRAPPED = False
 _SETTINGS: OpsBoardSettings | None = None
+_LOGGING_HANDLER: LoggingHandler | None = None
 
 _LOGGER = logging.getLogger("ops_board_observe")
+_LOGGING_HANDLER_MARKER = "_ops_board_observe_logging_handler"
 _TRACER_NAME = "ops_board_observe"
 
 
@@ -59,6 +62,7 @@ def bootstrap_observability(
                 OTLPLogExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "logs"))
             )
         )
+        _attach_logging_handler(logger_provider)
 
     trace.set_tracer_provider(tracer_provider)
     set_logger_provider(logger_provider)
@@ -97,14 +101,21 @@ def observe(
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
                 start_time = time.perf_counter()
                 tracer = trace.get_tracer(_TRACER_NAME)
-                with tracer.start_as_current_span(resolved_span_name) as span:
+                with tracer.start_as_current_span(
+                    resolved_span_name,
+                    record_exception=False,
+                    set_status_on_exception=False,
+                ) as span:
                     _set_common_span_attributes(span, func, span_attributes)
                     try:
-                        return await async_func(*args, **kwargs)
+                        result = await async_func(*args, **kwargs)
                     except Exception as exc:
                         span.record_exception(exc)
                         span.set_status(Status(StatusCode.ERROR, str(exc)))
                         raise
+                    else:
+                        span.set_status(Status(StatusCode.OK))
+                        return result
                     finally:
                         span.set_attribute("ops_board.duration_ms", _elapsed_ms(start_time))
 
@@ -114,14 +125,21 @@ def observe(
         def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             start_time = time.perf_counter()
             tracer = trace.get_tracer(_TRACER_NAME)
-            with tracer.start_as_current_span(resolved_span_name) as span:
+            with tracer.start_as_current_span(
+                resolved_span_name,
+                record_exception=False,
+                set_status_on_exception=False,
+            ) as span:
                 _set_common_span_attributes(span, func, span_attributes)
                 try:
-                    return func(*args, **kwargs)
+                    result = func(*args, **kwargs)
                 except Exception as exc:
                     span.record_exception(exc)
                     span.set_status(Status(StatusCode.ERROR, str(exc)))
                     raise
+                else:
+                    span.set_status(Status(StatusCode.OK))
+                    return result
                 finally:
                     span.set_attribute("ops_board.duration_ms", _elapsed_ms(start_time))
 
@@ -140,6 +158,7 @@ def _otlp_signal_endpoint(base_endpoint: str, signal: str) -> str:
 
 def _reset_for_tests() -> None:
     global _BOOTSTRAPPED, _SETTINGS
+    _detach_logging_handler()
     _BOOTSTRAPPED = False
     _SETTINGS = None
     _reset_opentelemetry_globals_for_tests()
@@ -165,6 +184,38 @@ def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
 
 def _optional_resource_attributes(values: Mapping[str, str | None]) -> dict[str, str]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _attach_logging_handler(logger_provider: LoggerProvider) -> None:
+    global _LOGGING_HANDLER
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        if isinstance(handler, LoggingHandler) and getattr(handler, _LOGGING_HANDLER_MARKER, False):
+            _LOGGING_HANDLER = handler
+            return
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="`LoggingHandler` in `opentelemetry-sdk` is deprecated.*",
+            category=DeprecationWarning,
+        )
+        handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+    setattr(handler, _LOGGING_HANDLER_MARKER, True)
+    root_logger.addHandler(handler)
+    _LOGGING_HANDLER = handler
+
+
+def _detach_logging_handler() -> None:
+    global _LOGGING_HANDLER
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if handler is _LOGGING_HANDLER or (
+            isinstance(handler, LoggingHandler) and getattr(handler, _LOGGING_HANDLER_MARKER, False)
+        ):
+            root_logger.removeHandler(handler)
+            handler.close()
+    _LOGGING_HANDLER = None
 
 
 def _set_common_span_attributes(
