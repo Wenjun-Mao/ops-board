@@ -5,7 +5,7 @@ import time
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from shared.ops_observe import bootstrap_observability, observe
+from ops_board_observe import bootstrap_observability, observe
 
 LOGGER = logging.getLogger("ops_board.dummy_job")
 JOB_NAME = "dummy-nightly-import"

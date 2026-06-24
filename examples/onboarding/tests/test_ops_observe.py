@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from shared.ops_observe import observe, load_settings
+from ops_board_observe import load_settings, observe
 
 
 def test_load_settings_precedence(tmp_path, monkeypatch):

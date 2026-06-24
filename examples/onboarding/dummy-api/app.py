@@ -3,27 +3,45 @@ from __future__ import annotations
 import logging
 import os
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from shared.ops_observe import bootstrap_observability, observe
+from ops_board_observe import OpsBoardSettings, bootstrap_observability, load_settings, observe
 
 LOGGER = logging.getLogger("ops_board.dummy_api")
+SERVICE_OVERRIDES = {
+    "service_name": "dummy-api",
+    "service_namespace": "ops-board.examples",
+    "owner": "mk",
+}
 
 
 def _export_enabled() -> bool:
     return os.environ.get("OPS_BOARD_EXPORT", "true").strip().lower() not in {"0", "false", "no"}
 
 
-settings = bootstrap_observability(
-    service_name="dummy-api",
-    service_namespace="ops-board.examples",
-    owner="mk",
-    export=_export_enabled(),
-)
+def _load_api_settings() -> OpsBoardSettings:
+    return load_settings(**SERVICE_OVERRIDES)
 
-app = FastAPI(title="Ops Board Dummy API", version="0.1.0")
+
+settings = _load_api_settings()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    global settings
+
+    settings = bootstrap_observability(
+        export=_export_enabled(),
+        **SERVICE_OVERRIDES,
+    )
+    yield
+
+
+app = FastAPI(title="Ops Board Dummy API", version="0.1.0", lifespan=lifespan)
 
 
 @app.get("/health")

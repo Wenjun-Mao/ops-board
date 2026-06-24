@@ -343,6 +343,35 @@ wheels = [
 ]
 
 [[package]]
+name = "ops-board-observe"
+version = "0.1.0"
+source = { editable = "../../packages/ops-board-observe" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "pydantic-settings" },
+    { name = "pyyaml" },
+    { name = "tenacity" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "opentelemetry-api", specifier = ">=1.39.0" },
+    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.0" },
+    { name = "opentelemetry-sdk", specifier = ">=1.39.0" },
+    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "tenacity", specifier = ">=9.1.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+]
+
+[[package]]
 name = "ops-board-onboarding-playground"
 version = "0.1.0"
 source = { virtual = "." }
@@ -350,13 +379,8 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "loguru" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-sdk" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
+    { name = "ops-board-observe" },
     { name = "pytest" },
-    { name = "pyyaml" },
     { name = "tenacity" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -366,13 +390,8 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "opentelemetry-api", specifier = ">=1.39.0" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.39.0" },
-    { name = "pydantic", specifier = ">=2.12.0" },
-    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "ops-board-observe", editable = "../../packages/ops-board-observe" },
     { name = "pytest", specifier = ">=9.0.0" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "tenacity", specifier = ">=9.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.38.0" },
 ]
