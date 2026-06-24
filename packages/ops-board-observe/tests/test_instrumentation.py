@@ -19,11 +19,14 @@ from ops_board_observe.instrumentation import _otlp_signal_endpoint, _reset_for_
 
 @pytest.fixture(autouse=True)
 def reset_observability() -> Iterator[None]:
+    root_logger = logging.getLogger()
+    original_root_level = root_logger.level
     _reset_for_tests()
     _remove_otel_logging_handlers()
     yield
     _reset_for_tests()
     _remove_otel_logging_handlers()
+    root_logger.setLevel(original_root_level)
 
 
 def test_otlp_signal_endpoint_adds_signal_suffix() -> None:
@@ -47,7 +50,10 @@ def test_bootstrap_returns_settings_with_export_disabled() -> None:
     assert settings.otlp_endpoint == "http://hp-15:4318"
 
 
-def test_bootstrap_export_false_does_not_attach_otel_logging_handler() -> None:
+def test_bootstrap_export_false_does_not_attach_otel_logging_handler_or_change_root_level() -> None:
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.WARNING)
+
     bootstrap_observability(
         export=False,
         service_name="unit-service",
@@ -57,6 +63,7 @@ def test_bootstrap_export_false_does_not_attach_otel_logging_handler() -> None:
     )
 
     assert _otel_logging_handlers() == []
+    assert root_logger.getEffectiveLevel() == logging.WARNING
 
 
 def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -75,7 +82,7 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
 
     bootstrap_observability(
         export=True,
-        service_name="unit-service-2",
+        service_name="unit-service",
         service_namespace="unit-namespace",
         owner="unit-owner",
         otlp_endpoint="http://hp-15:4318",
@@ -95,6 +102,67 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
     handlers = _otel_logging_handlers()
     assert len(handlers) == 1
     assert handlers[0] is not first_handler
+
+
+def test_bootstrap_export_false_then_export_true_raises_without_adding_handler(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+
+    bootstrap_observability(
+        export=False,
+        service_name="unit-service",
+        service_namespace="unit-namespace",
+        owner="unit-owner",
+        otlp_endpoint="http://hp-15:4318",
+    )
+
+    with pytest.raises(RuntimeError, match="already bootstrapped"):
+        bootstrap_observability(
+            export=True,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+    assert _otel_logging_handlers() == []
+
+
+def test_bootstrap_rejects_changed_settings_after_first_success() -> None:
+    bootstrap_observability(
+        export=False,
+        service_name="unit-service",
+        service_namespace="unit-namespace",
+        owner="unit-owner",
+        otlp_endpoint="http://hp-15:4318",
+    )
+
+    with pytest.raises(RuntimeError, match="already bootstrapped"):
+        bootstrap_observability(
+            export=False,
+            service_name="unit-service-2",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+
+def test_bootstrap_rejects_external_preconfigured_tracer_provider() -> None:
+    external_provider = TracerProvider()
+    trace.set_tracer_provider(external_provider)
+
+    with pytest.raises(RuntimeError, match="OpenTelemetry tracer provider"):
+        bootstrap_observability(
+            export=False,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+    assert instrumentation._BOOTSTRAPPED is False
+    assert trace.get_tracer_provider() is external_provider
 
 
 def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:

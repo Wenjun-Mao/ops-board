@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast
 
 from opentelemetry import trace
-from opentelemetry._logs import set_logger_provider
+from opentelemetry._logs import get_logger_provider, set_logger_provider
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -27,6 +27,7 @@ R = TypeVar("R")
 
 _BOOTSTRAPPED = False
 _SETTINGS: OpsBoardSettings | None = None
+_EXPORT_ENABLED: bool | None = None
 _LOGGING_HANDLER: LoggingHandler | None = None
 
 _LOGGER = logging.getLogger("ops_board_observe")
@@ -42,16 +43,19 @@ def bootstrap_observability(
 ) -> OpsBoardSettings:
     settings = load_settings(config_path=config_path, **overrides)
 
-    global _BOOTSTRAPPED, _SETTINGS
+    global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
     if _BOOTSTRAPPED:
-        _SETTINGS = settings
-        return settings
+        _validate_rebootstrap(settings, export)
+        if _SETTINGS is None:
+            raise RuntimeError("Ops Board observability bootstrap state is inconsistent")
+        return _SETTINGS
+
+    _ensure_no_existing_otel_provider_conflicts()
 
     resource = Resource.create(_resource_attributes(settings))
     tracer_provider = TracerProvider(resource=resource)
     logger_provider = LoggerProvider(resource=resource)
 
-    _configure_stdlib_logging()
     if export:
         tracer_provider.add_span_processor(
             BatchSpanProcessor(
@@ -63,13 +67,18 @@ def bootstrap_observability(
                 OTLPLogExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "logs"))
             )
         )
-        _attach_logging_handler(logger_provider)
 
     trace.set_tracer_provider(tracer_provider)
     set_logger_provider(logger_provider)
+    _ensure_active_otel_providers(tracer_provider, logger_provider)
+
+    if export:
+        _configure_stdlib_logging()
+        _attach_logging_handler(logger_provider)
 
     _BOOTSTRAPPED = True
     _SETTINGS = settings
+    _EXPORT_ENABLED = export
     _LOGGER.info(
         "ops_board_observability_bootstrapped",
         extra={
@@ -156,10 +165,11 @@ def _otlp_signal_endpoint(base_endpoint: str, signal: str) -> str:
 
 
 def _reset_for_tests() -> None:
-    global _BOOTSTRAPPED, _SETTINGS
+    global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
     _detach_logging_handler()
     _BOOTSTRAPPED = False
     _SETTINGS = None
+    _EXPORT_ENABLED = None
     _reset_opentelemetry_globals_for_tests()
 
 
@@ -183,6 +193,52 @@ def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
 
 def _optional_resource_attributes(values: Mapping[str, str | None]) -> dict[str, str]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _validate_rebootstrap(settings: OpsBoardSettings, export: bool) -> None:
+    if (
+        _SETTINGS is not None
+        and settings.model_dump() == _SETTINGS.model_dump()
+        and export == _EXPORT_ENABLED
+    ):
+        return
+    raise RuntimeError(
+        "Ops Board observability is already bootstrapped and cannot be reconfigured "
+        "in-process. Restart the process or call bootstrap_observability with the "
+        "same effective settings and export flag."
+    )
+
+
+def _ensure_no_existing_otel_provider_conflicts() -> None:
+    tracer_provider = _configured_tracer_provider()
+    if tracer_provider is not None:
+        raise RuntimeError(
+            "OpenTelemetry tracer provider is already configured before Ops Board "
+            "observability bootstrap. Configure Ops Board observability first, or "
+            "avoid bootstrapping it in this process."
+        )
+
+    logger_provider = _configured_logger_provider()
+    if logger_provider is not None:
+        raise RuntimeError(
+            "OpenTelemetry logger provider is already configured before Ops Board "
+            "observability bootstrap. Configure Ops Board observability first, or "
+            "avoid bootstrapping it in this process."
+        )
+
+
+def _ensure_active_otel_providers(
+    tracer_provider: TracerProvider,
+    logger_provider: LoggerProvider,
+) -> None:
+    if trace.get_tracer_provider() is not tracer_provider:
+        raise RuntimeError(
+            "Ops Board observability failed to install its OpenTelemetry tracer provider"
+        )
+    if get_logger_provider() is not logger_provider:
+        raise RuntimeError(
+            "Ops Board observability failed to install its OpenTelemetry logger provider"
+        )
 
 
 def _configure_stdlib_logging() -> None:
@@ -237,6 +293,22 @@ def _set_common_span_attributes(
 
 def _elapsed_ms(start_time: float) -> float:
     return (time.perf_counter() - start_time) * 1000
+
+
+def _configured_tracer_provider() -> object | None:
+    # OpenTelemetry exposes provider installation as process-global set-once state.
+    # Public getters return proxy providers when unset, so conflict detection needs
+    # this narrow private-state read before calling set_tracer_provider().
+    import opentelemetry.trace as trace_api
+
+    return trace_api._TRACER_PROVIDER
+
+
+def _configured_logger_provider() -> object | None:
+    # Mirrors _configured_tracer_provider for the logs API's set-once global.
+    import opentelemetry._logs._internal as logs_internal
+
+    return logs_internal._LOGGER_PROVIDER
 
 
 def _reset_opentelemetry_globals_for_tests() -> None:
