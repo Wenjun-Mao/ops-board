@@ -37,7 +37,7 @@ Resource metadata includes standard service fields plus `service.owner`.
 
 - Package tests cover settings precedence, bootstrap conflict and reconfiguration behavior, provider rollback and cleanup, `export=False` side effects, OTel logging handler wiring, and span emission.
 - `OTEL_PYTHON_TRACER_PROVIDER` and `OTEL_PYTHON_LOGGER_PROVIDER` count as host-owned provider intent and must be rejected before Ops Board installs providers.
-- Pre-existing unmarked OTel `LoggingHandler` instances count as host-owned logging pipeline setup and must be rejected before Ops Board attaches its handler.
+- Pre-existing unmarked OTel `LoggingHandler` instances count as host-owned logging pipeline setup and must be rejected before Ops Board bootstraps.
 - Docs and playground workflows should import and install `ops-board-observe` instead of copying helper code.
 - Any future host-provider composition must update this ADR or add a replacement ADR before relaxing the first-call-wins/provider-conflict contract.
 

@@ -235,6 +235,7 @@ def _validate_rebootstrap(settings: OpsBoardSettings, export: bool) -> None:
 
 def _ensure_no_existing_otel_provider_conflicts() -> None:
     _ensure_no_otel_provider_env_conflicts()
+    _ensure_no_host_otel_logging_handler_conflicts()
 
     tracer_provider = _configured_tracer_provider()
     if tracer_provider is not None:
@@ -264,6 +265,17 @@ def _ensure_no_otel_provider_env_conflicts() -> None:
                 f"OpenTelemetry {provider_name} is configured by {env_var} before "
                 "Ops Board observability bootstrap. Remove that environment variable "
                 "or let the host application own observability bootstrap."
+            )
+
+
+def _ensure_no_host_otel_logging_handler_conflicts() -> None:
+    for handler in logging.getLogger().handlers:
+        if isinstance(handler, LoggingHandler) and not getattr(handler, _LOGGING_HANDLER_MARKER, False):
+            raise RuntimeError(
+                "OpenTelemetry logging handler is already attached before Ops Board "
+                "observability bootstrap. Remove the host-owned handler, configure "
+                "Ops Board observability first, or let the host application own "
+                "observability bootstrap."
             )
 
 
@@ -339,13 +351,6 @@ def _attach_logging_handler(logger_provider: LoggerProvider) -> None:
         if isinstance(handler, LoggingHandler) and getattr(handler, _LOGGING_HANDLER_MARKER, False):
             _LOGGING_HANDLER = handler
             return
-        if isinstance(handler, LoggingHandler):
-            raise RuntimeError(
-                "OpenTelemetry logging handler is already attached before Ops Board "
-                "observability bootstrap. Remove the host-owned handler, configure "
-                "Ops Board observability first, or let the host application own "
-                "observability bootstrap."
-            )
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
