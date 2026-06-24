@@ -33,6 +33,10 @@ For colleague projects running somewhere other than `hp-15`, use `http://hp-15:4
 
 Keep project-owner work separate from Ops Board maintainer/admin work. In the target project, add package config, health endpoints, tests, and telemetry. Do not create or edit Uptime Kuma monitors, Homepage entries, Plane workspaces, or Ops Board-side credentials unless the user explicitly says this Codex session is acting as the Ops Board maintainer/admin.
 
+Do not leave real onboardings on package defaults. Defaults exist for local tests only: `service_name=unknown-service`, `service_namespace=default`, `environment=local`, `owner=unknown`, `version=0.1.0`, `runtime_host=<OS hostname>`, `tailscale_host=None`, `otlp_endpoint=http://localhost:4318`, and `health_url=None`.
+
+Use short stable environment labels such as `local`, `dev`, `test`, `staging`, or `prod`; the package accepts strings and does not enforce a closed enum. For `tailscale_host`, prefer the Tailscale MagicDNS name shown in the Tailscale app or Machines page. If the target host has no clear MagicDNS name, record the Tailscale IP in the health URL and leave `tailscale_host` unset.
+
 Before editing app code, run this network preflight from the target runtime host:
 
 ```bash

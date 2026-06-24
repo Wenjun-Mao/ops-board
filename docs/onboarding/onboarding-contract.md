@@ -19,6 +19,24 @@ Every onboarded project must define:
 | `runtime.provider` | Optional | `local`, `hetzner`, `aws` | Useful when projects span providers. |
 | `runtime.country` | Optional | `CA`, `US`, `JP` | Useful when latency or data location matters. |
 
+The Python package has defaults so local tests can run without config, but those defaults are not enough for real onboarding:
+
+| Package field | Default | Real onboarding rule |
+|---------------|---------|----------------------|
+| `service_name` | `unknown-service` | Replace with a stable service name. |
+| `service_namespace` | `default` | Replace with a project, repo, product, client, or team group. |
+| `environment` | `local` | Replace unless the runtime really is local. Accepted values are conventions, not a code enum; use short labels such as `local`, `dev`, `test`, `staging`, or `prod`. |
+| `owner` | `unknown` | Replace with the person or team responsible for first response. |
+| `version` | `0.1.0` | Keep only during early onboarding; use the app version, package version, commit tag, or release label when available. |
+| `runtime_host` | Python OS hostname | Confirm it identifies the actual runtime host clearly. |
+| `tailscale_host` | empty | Fill when the runtime host has a stable Tailscale MagicDNS name or Tailscale IP. |
+| `otlp_endpoint` | `http://localhost:4318` | Use `http://hp-15:4318` for projects not running directly on HP-15. |
+| `health_url` | empty | Fill for long-running services with a health endpoint; omit for one-shot jobs. |
+
+The package uses these values as OpenTelemetry resource attributes: `service.name`, `service.namespace`, `service.version`, `deployment.environment`, `service.owner`, `host.name`, and optional `ops_board.tailscale_host`, `ops_board.runtime_provider`, and `ops_board.runtime_country`. `health_url` is project handoff metadata for Uptime Kuma monitor setup; it is not sent as a resource attribute.
+
+Tailscale host values come from Tailscale MagicDNS. The machine name is shown in the Tailscale app and Machines page. The full DNS name is the machine name plus the tailnet DNS name, for example `billing-host.tailnet-name.ts.net`. If MagicDNS is not clear, the project owner can share the Tailscale IP and the Ops Board maintainer/admin can decide what to monitor.
+
 ## Required Signals
 
 Every onboarded project should expose or emit:

@@ -58,6 +58,49 @@ health endpoint URL, if this is a service
 Ops Board OTLP endpoint
 ```
 
+## Config Fields
+
+The package has local-test defaults, but a real onboarding should fill in the fields below so SigNoz, Uptime Kuma, and teammates can identify the project. The package accepts strings for these values; the "Use" column names the convention Ops Board expects.
+
+| YAML field | Required for onboarding? | Package default | Use |
+|------------|---------------------------|-----------------|-----|
+| `service.name` | Yes | `unknown-service` | Stable service name in SigNoz, such as `billing-api` or `invoice-job`. Use lowercase words with `-` when possible. |
+| `service.namespace` | Yes | `default` | Project, product, repo family, or team grouping, such as `billing` or `content-shuttle`. |
+| `service.environment` | Yes | `local` | Runtime environment. Use a short stable label such as `local`, `dev`, `test`, `staging`, or `prod`. `test` is fine for a real test environment. |
+| `service.owner` | Yes | `unknown` | Person or team responsible for first response, such as `mk`, `ops`, or `data-team`. |
+| `service.version` | Recommended | `0.1.0` | App release, package version, commit tag, or a simple placeholder during first onboarding. |
+| `runtime.host` | Yes | the OS hostname from Python | Machine or VPS where the project runs, such as `hp-15`, `billing-vps-1`, or `john-laptop`. |
+| `runtime.tailscale_host` | Recommended when the host is on Tailscale | empty | Tailscale MagicDNS name or Tailscale IP for the project host. This helps people find the runtime host and helps maintainers build health-check URLs. |
+| `ops_board.otlp_endpoint` | Yes for projects not running directly on `hp-15` | `http://localhost:4318` | Where traces and logs are sent. For colleague projects, use `http://hp-15:4318`. |
+| `ops_board.health_url` | Services only | empty | HTTP health endpoint the Ops Board maintainer/admin can monitor, such as `http://api-host.tailnet-name.ts.net:8000/health`. Omit for one-shot jobs with no health endpoint. |
+
+These values become OpenTelemetry resource attributes in SigNoz:
+
+```text
+service.name
+service.namespace
+service.version
+deployment.environment
+service.owner
+host.name
+ops_board.tailscale_host
+```
+
+`ops_board.health_url` is not sent as a trace attribute by the package. It is handoff information for Uptime Kuma monitor setup.
+
+To find `runtime.tailscale_host`, use whichever source is easiest:
+
+1. Open the Tailscale app or admin console and find the machine name for the project host.
+2. If MagicDNS is enabled, use the machine name, for example `billing-host`, when short names resolve from your tailnet.
+3. For a more explicit value, use the full MagicDNS name shown on the machine page, for example `billing-host.tailnet-name.ts.net`.
+4. If DNS names are confusing but the host is reachable, use the Tailscale IP in the health URL and leave `runtime.tailscale_host` empty.
+
+From the project host, verify the chosen name or IP before sharing it:
+
+```bash
+curl -fsS --max-time 20 http://api-host.tailnet-name.ts.net:8000/health
+```
+
 ## Python Package Setup
 
 Do these steps from your project's root folder.
