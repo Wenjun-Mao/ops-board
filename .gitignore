@@ -56,4 +56,5 @@ Thumbs.db
 .vscode/
 
 .superpowers/
+.worktrees/
 temp/
