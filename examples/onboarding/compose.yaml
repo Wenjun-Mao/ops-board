@@ -3,8 +3,8 @@ name: ops-board-onboarding
 services:
   dummy-api:
     build:
-      context: .
-      dockerfile: dummy-api/Dockerfile
+      context: ../..
+      dockerfile: examples/onboarding/dummy-api/Dockerfile
     container_name: ops-board-dummy-api
     restart: unless-stopped
     ports:
@@ -22,8 +22,8 @@ services:
 
   dummy-job:
     build:
-      context: .
-      dockerfile: dummy-job/Dockerfile
+      context: ../..
+      dockerfile: examples/onboarding/dummy-job/Dockerfile
     container_name: ops-board-dummy-job
     restart: "no"
     environment:
