@@ -100,17 +100,7 @@ def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) ->
     _EXPORT_ENABLED = export
     _TRACER_PROVIDER = tracer_provider
     _LOGGER_PROVIDER = logger_provider
-    _LOGGER.info(
-        "ops_board_observability_bootstrapped",
-        extra={
-            "export": export,
-            "otlp_endpoint": settings.otlp_endpoint,
-            "service_name": settings.service_name,
-            "service_namespace": settings.service_namespace,
-            "environment": settings.environment,
-            "owner": settings.owner,
-        },
-    )
+    _log_bootstrap_success(settings=settings, export=export)
     return settings
 
 
@@ -196,7 +186,7 @@ def _reset_for_tests() -> None:
         _EXPORT_ENABLED = None
         _LOGGER_PROVIDER = None
         _TRACER_PROVIDER = None
-        _reset_opentelemetry_globals_for_tests()
+        _force_clear_otel_globals_for_tests()
 
 
 def _resource_attributes(settings: OpsBoardSettings) -> dict[str, str]:
@@ -277,12 +267,30 @@ def _rollback_failed_bootstrap(
     _shutdown_provider(logger_provider)
     _shutdown_provider(tracer_provider)
     if providers_installed:
-        _reset_opentelemetry_globals_for_tests()
+        _clear_otel_globals_if_owned(tracer_provider, logger_provider)
 
 
 def _shutdown_provider(provider: object | None) -> None:
     if provider is not None:
         cast(Any, provider).shutdown()
+
+
+def _log_bootstrap_success(*, settings: OpsBoardSettings, export: bool) -> None:
+    try:
+        _LOGGER.info(
+            "ops_board_observability_bootstrapped",
+            extra={
+                "export": export,
+                "otlp_endpoint": settings.otlp_endpoint,
+                "service_name": settings.service_name,
+                "service_namespace": settings.service_namespace,
+                "environment": settings.environment,
+                "owner": settings.owner,
+            },
+        )
+    except Exception:
+        # Host-owned logging handlers should not invalidate a completed bootstrap.
+        return
 
 
 def _configure_stdlib_logging() -> None:
@@ -354,7 +362,24 @@ def _configured_logger_provider() -> object | None:
     return logs_internal._LOGGER_PROVIDER
 
 
-def _reset_opentelemetry_globals_for_tests() -> None:
+def _clear_otel_globals_if_owned(
+    tracer_provider: TracerProvider,
+    logger_provider: LoggerProvider,
+) -> None:
+    # Production rollback may touch OTel's set-once private globals, but only when
+    # they still point to the providers created by the failed bootstrap attempt.
+    import opentelemetry._logs._internal as logs_internal
+    import opentelemetry.trace as trace_api
+
+    if trace_api._TRACER_PROVIDER is tracer_provider:
+        trace_api._TRACER_PROVIDER = None
+        trace_api._TRACER_PROVIDER_SET_ONCE._done = False
+    if logs_internal._LOGGER_PROVIDER is logger_provider:
+        logs_internal._LOGGER_PROVIDER = None
+        logs_internal._LOGGER_PROVIDER_SET_ONCE._done = False
+
+
+def _force_clear_otel_globals_for_tests() -> None:
     # OpenTelemetry intentionally makes providers set-once in production; tests need
     # isolated bootstrap cycles without leaking global providers across cases.
     import opentelemetry._logs._internal as logs_internal

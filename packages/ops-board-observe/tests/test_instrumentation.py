@@ -16,7 +16,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from opentelemetry.trace import StatusCode
 import pytest
 
-from ops_board_observe import bootstrap_observability, observe
+from ops_board_observe import OpsBoardSettings, bootstrap_observability, observe
 import ops_board_observe.instrumentation as instrumentation
 from ops_board_observe.instrumentation import _otlp_signal_endpoint, _reset_for_tests
 
@@ -47,10 +47,7 @@ def test_otlp_signal_endpoint_adds_signal_suffix() -> None:
 
 
 def test_bootstrap_returns_settings_with_export_disabled() -> None:
-    settings = bootstrap_observability(
-        export=False,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    settings = _bootstrap(export=False)
 
     assert settings.service_name == "unit-service"
     assert settings.service_namespace == "unit-namespace"
@@ -62,10 +59,7 @@ def test_bootstrap_export_false_does_not_attach_otel_logging_handler_or_change_r
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.WARNING)
 
-    bootstrap_observability(
-        export=False,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    _bootstrap(export=False)
 
     assert _otel_logging_handlers() == []
     assert root_logger.getEffectiveLevel() == logging.WARNING
@@ -76,10 +70,7 @@ def test_reset_shuts_down_export_enabled_batch_processor_threads(
 ) -> None:
     _install_noop_otlp_exporters(monkeypatch)
 
-    bootstrap_observability(
-        export=True,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    _bootstrap(export=True)
 
     assert _otel_batch_processor_threads()
 
@@ -91,33 +82,18 @@ def test_reset_shuts_down_export_enabled_batch_processor_threads(
 def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_noop_otlp_exporters(monkeypatch)
 
-    bootstrap_observability(
-        export=True,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    _bootstrap(export=True)
     handlers = _otel_logging_handlers()
     assert len(handlers) == 1
     first_handler = handlers[0]
 
-    bootstrap_observability(
-        export=True,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
-    )
+    _bootstrap(export=True)
     assert _otel_logging_handlers() == [first_handler]
 
     _reset_for_tests()
     assert _otel_logging_handlers() == []
 
-    bootstrap_observability(
-        export=True,
-        service_name="unit-service-3",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
-    )
+    _bootstrap(export=True, service_name="unit-service-3")
     handlers = _otel_logging_handlers()
     assert len(handlers) == 1
     assert handlers[0] is not first_handler
@@ -129,10 +105,7 @@ def test_concurrent_identical_bootstrap_calls_share_one_active_bootstrap(
     _install_slow_noop_otlp_exporters(monkeypatch)
 
     def call_bootstrap() -> object:
-        return bootstrap_observability(
-            export=True,
-            **BOOTSTRAP_OVERRIDES,
-        )
+        return _bootstrap(export=True)
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         settings = list(executor.map(lambda _: call_bootstrap(), range(8)))
@@ -146,34 +119,19 @@ def test_bootstrap_export_false_then_export_true_raises_without_adding_handler(
 ) -> None:
     _install_noop_otlp_exporters(monkeypatch)
 
-    bootstrap_observability(
-        export=False,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    _bootstrap(export=False)
 
     with pytest.raises(RuntimeError, match="already bootstrapped"):
-        bootstrap_observability(
-            export=True,
-            **BOOTSTRAP_OVERRIDES,
-        )
+        _bootstrap(export=True)
 
     assert _otel_logging_handlers() == []
 
 
 def test_bootstrap_rejects_changed_settings_after_first_success() -> None:
-    bootstrap_observability(
-        export=False,
-        **BOOTSTRAP_OVERRIDES,
-    )
+    _bootstrap(export=False)
 
     with pytest.raises(RuntimeError, match="already bootstrapped"):
-        bootstrap_observability(
-            export=False,
-            service_name="unit-service-2",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=False, service_name="unit-service-2")
 
 
 def test_bootstrap_rejects_external_preconfigured_tracer_provider() -> None:
@@ -181,13 +139,7 @@ def test_bootstrap_rejects_external_preconfigured_tracer_provider() -> None:
     trace.set_tracer_provider(external_provider)
 
     with pytest.raises(RuntimeError, match="OpenTelemetry tracer provider"):
-        bootstrap_observability(
-            export=False,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=False)
 
     assert instrumentation._BOOTSTRAPPED is False
     assert trace.get_tracer_provider() is external_provider
@@ -198,13 +150,7 @@ def test_bootstrap_rejects_external_preconfigured_logger_provider() -> None:
     set_logger_provider(external_provider)
 
     with pytest.raises(RuntimeError, match="OpenTelemetry logger provider"):
-        bootstrap_observability(
-            export=False,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=False)
 
     assert instrumentation._BOOTSTRAPPED is False
     assert get_logger_provider() is external_provider
@@ -228,13 +174,7 @@ def test_bootstrap_rolls_back_provider_globals_after_logging_handler_failure(
     )
 
     with pytest.raises(RuntimeError, match="attach boom"):
-        bootstrap_observability(
-            export=True,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=True)
 
     assert instrumentation._BOOTSTRAPPED is False
     assert root_logger.getEffectiveLevel() == logging.WARNING
@@ -245,16 +185,63 @@ def test_bootstrap_rolls_back_provider_globals_after_logging_handler_failure(
         original_attach_logging_handler,
     )
 
-    settings = bootstrap_observability(
-        export=True,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
-    )
+    settings = _bootstrap(export=True)
 
     assert settings.service_name == "unit-service"
     assert len(_otel_logging_handlers()) == 1
+
+
+def test_bootstrap_success_log_handler_failure_does_not_break_bootstrap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+    root_logger = logging.getLogger()
+    raising_handler = _RaisingHandler()
+    root_logger.addHandler(raising_handler)
+
+    try:
+        settings = _bootstrap(export=True)
+
+        assert settings.service_name == "unit-service"
+        assert instrumentation._BOOTSTRAPPED is True
+        assert len(_otel_logging_handlers()) == 1
+        assert _bootstrap(export=True) is settings
+    finally:
+        root_logger.removeHandler(raising_handler)
+        raising_handler.close()
+
+
+def test_bootstrap_rollback_keeps_external_providers_after_install_race(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    external_tracer_provider = TracerProvider()
+    external_logger_provider = LoggerProvider()
+
+    def fail_after_external_provider_wins(
+        tracer_provider: TracerProvider,
+        logger_provider: LoggerProvider,
+    ) -> None:
+        import opentelemetry._logs._internal as logs_internal
+        import opentelemetry.trace as trace_api
+
+        trace_api._TRACER_PROVIDER = external_tracer_provider
+        trace_api._TRACER_PROVIDER_SET_ONCE._done = True
+        logs_internal._LOGGER_PROVIDER = external_logger_provider
+        logs_internal._LOGGER_PROVIDER_SET_ONCE._done = True
+        raise RuntimeError("provider race")
+
+    monkeypatch.setattr(
+        instrumentation,
+        "_ensure_active_otel_providers",
+        fail_after_external_provider_wins,
+    )
+
+    with pytest.raises(RuntimeError, match="provider race"):
+        _bootstrap(export=False)
+
+    assert instrumentation._BOOTSTRAPPED is False
+    assert trace.get_tracer_provider() is external_tracer_provider
+    assert get_logger_provider() is external_logger_provider
 
 
 def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -264,13 +251,7 @@ def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pyte
     root_logger.setLevel(logging.WARNING)
 
     try:
-        bootstrap_observability(
-            export=True,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=True)
 
         assert root_logger.getEffectiveLevel() <= logging.INFO
         assert logging.getLogger("ops_board_observe").isEnabledFor(logging.INFO)
@@ -288,13 +269,7 @@ def test_bootstrap_export_true_adds_only_otel_handler_when_root_has_no_handlers(
         root_logger.removeHandler(handler)
 
     try:
-        bootstrap_observability(
-            export=True,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
-        )
+        _bootstrap(export=True)
 
         handlers = list(root_logger.handlers)
         assert len(handlers) == 1
@@ -309,13 +284,7 @@ def test_bootstrap_export_true_adds_only_otel_handler_when_root_has_no_handlers(
 
 
 def test_bootstrap_resource_attributes_use_service_owner() -> None:
-    bootstrap_observability(
-        export=False,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
-    )
+    _bootstrap(export=False)
     provider = trace.get_tracer_provider()
     exporter = InMemorySpanExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
@@ -414,6 +383,10 @@ def _only_span(exporter: InMemorySpanExporter):
     return spans[0]
 
 
+def _bootstrap(*, export: bool, **overrides: str) -> OpsBoardSettings:
+    return bootstrap_observability(export=export, **(BOOTSTRAP_OVERRIDES | overrides))
+
+
 def _otel_logging_handlers() -> list[LoggingHandler]:
     return [
         handler
@@ -493,3 +466,8 @@ class _SlowNoopLogExporter(_NoopLogExporter):
     def __init__(self, *args: object, **kwargs: object) -> None:
         time.sleep(0.05)
         super().__init__(*args, **kwargs)
+
+
+class _RaisingHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        raise RuntimeError("handler boom")

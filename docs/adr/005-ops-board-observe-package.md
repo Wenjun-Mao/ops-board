@@ -27,6 +27,18 @@ Runtime docs use `http://hp-15:4318` as the default colleague endpoint. `localho
 
 Resource metadata includes standard service fields plus `service.owner`.
 
+## Rejected Alternatives
+
+- Keep the copied playground helper: rejected because it preserves manual onboarding, dependency drift, and broken imports in separate projects.
+- Silently compose with pre-existing host OpenTelemetry providers: rejected because OTel providers are process-global and set-once, so silent composition can claim success while another provider owns export behavior.
+- Allow in-process reconfiguration: rejected because changing settings, exporters, providers, or logging handlers after bootstrap can leave traces and logs using different runtime contracts. Hosts should restart the process, and tests should use the explicit reset helper.
+
+## Guardrails
+
+- Package tests cover settings precedence, bootstrap conflict and reconfiguration behavior, provider rollback and cleanup, `export=False` side effects, OTel logging handler wiring, and span emission.
+- Docs and playground workflows should import and install `ops-board-observe` instead of copying helper code.
+- Any future host-provider composition must update this ADR or add a replacement ADR before relaxing the first-call-wins/provider-conflict contract.
+
 ## Consequences
 
 - Separate projects can depend on one package contract instead of copying helpers.
