@@ -250,7 +250,6 @@ def _ensure_active_otel_providers(
 
 
 def _configure_stdlib_logging() -> None:
-    logging.basicConfig(level=logging.INFO)
     root_logger = logging.getLogger()
     if root_logger.getEffectiveLevel() > logging.INFO:
         root_logger.setLevel(logging.INFO)

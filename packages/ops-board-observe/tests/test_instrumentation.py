@@ -227,6 +227,36 @@ def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pyte
         root_logger.setLevel(original_level)
 
 
+def test_bootstrap_export_true_adds_only_otel_handler_when_root_has_no_handlers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+    root_logger = logging.getLogger()
+    original_handlers = list(root_logger.handlers)
+    for handler in original_handlers:
+        root_logger.removeHandler(handler)
+
+    try:
+        bootstrap_observability(
+            export=True,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+        handlers = list(root_logger.handlers)
+        assert len(handlers) == 1
+        assert isinstance(handlers[0], LoggingHandler)
+    finally:
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+            if handler not in original_handlers:
+                handler.close()
+        for handler in original_handlers:
+            root_logger.addHandler(handler)
+
+
 def test_bootstrap_resource_attributes_use_service_owner() -> None:
     bootstrap_observability(
         export=False,
