@@ -196,13 +196,29 @@ def process_request(item_id: str) -> dict[str, str]:
     return {"item_id": item_id, "status": "processed"}
 ```
 
-Then add the health URL to Uptime Kuma.
+Then open Uptime Kuma at `http://hp-15:3001` and create an HTTP monitor for the health URL. See `docs/monitoring/ops-board-user-manual.md` for the monitor workflow and context.
 
 ## Dockerized App Or CI
 
 For Docker Compose, CI, or a process manager, environment variables are usually easier than mounting `ops-board.yaml`.
 
 Use the same values as the YAML examples:
+
+For a job, omit `OPS_BOARD_HEALTH_URL` when there is no health endpoint:
+
+```yaml
+environment:
+  OPS_BOARD_SERVICE_NAME: my-job
+  OPS_BOARD_SERVICE_NAMESPACE: my-project
+  OPS_BOARD_ENVIRONMENT: prod
+  OPS_BOARD_OWNER: team-name
+  OPS_BOARD_VERSION: 0.1.0
+  OPS_BOARD_RUNTIME_HOST: job-host
+  OPS_BOARD_TAILSCALE_HOST: job-host.tailnet-name.ts.net
+  OPS_BOARD_OTLP_ENDPOINT: http://hp-15:4318
+```
+
+For a web/API service with a health endpoint:
 
 ```yaml
 environment:
