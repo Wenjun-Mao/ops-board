@@ -55,6 +55,19 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 | Track follow-up work | Plane | It turns operational findings into tasks. |
 | Reach private hosts | Tailscale | It connects local machines and VPSs privately. |
 
+## Maintainer/Admin Workflow: Onboard A Colleague Project
+
+When a colleague provides a service name, runtime host, and health URL:
+
+1. Open Uptime Kuma at `http://hp-15:3001`.
+2. Create or confirm an HTTP monitor for the health URL.
+3. Use the project service name in the monitor name.
+4. Confirm the monitor can reach the health endpoint from Ops Board.
+5. Add or update Homepage links only when the project should appear on the launch board.
+6. Ask the colleague to run one request or job so SigNoz receives a trace for the service name.
+
+The colleague owns the target project code and health endpoint. The Ops Board maintainer/admin owns monitor naming, monitor placement, status-page placement, and Ops Board-side links.
+
 ## Common Workflow: Service Looks Down
 
 1. Open Homepage.
@@ -153,4 +166,5 @@ Current manual steps:
 
 - Create SigNoz and Plane first admin/workspace accounts through their UIs, using `docs/monitoring/first-run-accounts.md`.
 - Add real project entries to Homepage manually.
+- Create or confirm real project Uptime Kuma monitors manually after the colleague provides the health URL.
 - Use project docs to track ownership and runtime location.
