@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +19,13 @@ import pytest
 from ops_board_observe import bootstrap_observability, observe
 import ops_board_observe.instrumentation as instrumentation
 from ops_board_observe.instrumentation import _otlp_signal_endpoint, _reset_for_tests
+
+BOOTSTRAP_OVERRIDES = {
+    "service_name": "unit-service",
+    "service_namespace": "unit-namespace",
+    "owner": "unit-owner",
+    "otlp_endpoint": "http://hp-15:4318",
+}
 
 
 @pytest.fixture(autouse=True)
@@ -41,10 +49,7 @@ def test_otlp_signal_endpoint_adds_signal_suffix() -> None:
 def test_bootstrap_returns_settings_with_export_disabled() -> None:
     settings = bootstrap_observability(
         export=False,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
+        **BOOTSTRAP_OVERRIDES,
     )
 
     assert settings.service_name == "unit-service"
@@ -59,14 +64,28 @@ def test_bootstrap_export_false_does_not_attach_otel_logging_handler_or_change_r
 
     bootstrap_observability(
         export=False,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
+        **BOOTSTRAP_OVERRIDES,
     )
 
     assert _otel_logging_handlers() == []
     assert root_logger.getEffectiveLevel() == logging.WARNING
+
+
+def test_reset_shuts_down_export_enabled_batch_processor_threads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+
+    bootstrap_observability(
+        export=True,
+        **BOOTSTRAP_OVERRIDES,
+    )
+
+    assert _otel_batch_processor_threads()
+
+    _reset_for_tests()
+
+    assert _wait_for_no_otel_batch_processor_threads()
 
 
 def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -74,10 +93,7 @@ def test_bootstrap_export_true_attaches_one_otel_logging_handler(monkeypatch: py
 
     bootstrap_observability(
         export=True,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
+        **BOOTSTRAP_OVERRIDES,
     )
     handlers = _otel_logging_handlers()
     assert len(handlers) == 1
@@ -115,10 +131,7 @@ def test_concurrent_identical_bootstrap_calls_share_one_active_bootstrap(
     def call_bootstrap() -> object:
         return bootstrap_observability(
             export=True,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
+            **BOOTSTRAP_OVERRIDES,
         )
 
     with ThreadPoolExecutor(max_workers=8) as executor:
@@ -135,19 +148,13 @@ def test_bootstrap_export_false_then_export_true_raises_without_adding_handler(
 
     bootstrap_observability(
         export=False,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
+        **BOOTSTRAP_OVERRIDES,
     )
 
     with pytest.raises(RuntimeError, match="already bootstrapped"):
         bootstrap_observability(
             export=True,
-            service_name="unit-service",
-            service_namespace="unit-namespace",
-            owner="unit-owner",
-            otlp_endpoint="http://hp-15:4318",
+            **BOOTSTRAP_OVERRIDES,
         )
 
     assert _otel_logging_handlers() == []
@@ -156,10 +163,7 @@ def test_bootstrap_export_false_then_export_true_raises_without_adding_handler(
 def test_bootstrap_rejects_changed_settings_after_first_success() -> None:
     bootstrap_observability(
         export=False,
-        service_name="unit-service",
-        service_namespace="unit-namespace",
-        owner="unit-owner",
-        otlp_endpoint="http://hp-15:4318",
+        **BOOTSTRAP_OVERRIDES,
     )
 
     with pytest.raises(RuntimeError, match="already bootstrapped"):
@@ -204,6 +208,53 @@ def test_bootstrap_rejects_external_preconfigured_logger_provider() -> None:
 
     assert instrumentation._BOOTSTRAPPED is False
     assert get_logger_provider() is external_provider
+
+
+def test_bootstrap_rolls_back_provider_globals_after_logging_handler_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_noop_otlp_exporters(monkeypatch)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.WARNING)
+    original_attach_logging_handler = instrumentation._attach_logging_handler
+
+    def fail_attach_logging_handler(logger_provider: LoggerProvider) -> None:
+        raise RuntimeError("attach boom")
+
+    monkeypatch.setattr(
+        instrumentation,
+        "_attach_logging_handler",
+        fail_attach_logging_handler,
+    )
+
+    with pytest.raises(RuntimeError, match="attach boom"):
+        bootstrap_observability(
+            export=True,
+            service_name="unit-service",
+            service_namespace="unit-namespace",
+            owner="unit-owner",
+            otlp_endpoint="http://hp-15:4318",
+        )
+
+    assert instrumentation._BOOTSTRAPPED is False
+    assert root_logger.getEffectiveLevel() == logging.WARNING
+
+    monkeypatch.setattr(
+        instrumentation,
+        "_attach_logging_handler",
+        original_attach_logging_handler,
+    )
+
+    settings = bootstrap_observability(
+        export=True,
+        service_name="unit-service",
+        service_namespace="unit-namespace",
+        owner="unit-owner",
+        otlp_endpoint="http://hp-15:4318",
+    )
+
+    assert settings.service_name == "unit-service"
+    assert len(_otel_logging_handlers()) == 1
 
 
 def test_bootstrap_export_true_enables_info_level_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -375,6 +426,23 @@ def _remove_otel_logging_handlers() -> None:
     root_logger = logging.getLogger()
     for handler in _otel_logging_handlers():
         root_logger.removeHandler(handler)
+
+
+def _otel_batch_processor_threads() -> list[threading.Thread]:
+    return [
+        thread
+        for thread in threading.enumerate()
+        if thread.name in {"OtelBatchSpanRecordProcessor", "OtelBatchLogRecordProcessor"}
+    ]
+
+
+def _wait_for_no_otel_batch_processor_threads(timeout_seconds: float = 1.0) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if not _otel_batch_processor_threads():
+            return True
+        time.sleep(0.01)
+    return not _otel_batch_processor_threads()
 
 
 def _install_noop_otlp_exporters(monkeypatch: pytest.MonkeyPatch) -> None:

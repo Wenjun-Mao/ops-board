@@ -30,6 +30,8 @@ _BOOTSTRAPPED = False
 _SETTINGS: OpsBoardSettings | None = None
 _EXPORT_ENABLED: bool | None = None
 _LOGGING_HANDLER: LoggingHandler | None = None
+_TRACER_PROVIDER: TracerProvider | None = None
+_LOGGER_PROVIDER: LoggerProvider | None = None
 _BOOTSTRAP_LOCK = threading.RLock()
 
 _LOGGER = logging.getLogger("ops_board_observe")
@@ -50,7 +52,7 @@ def bootstrap_observability(
 
 
 def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) -> OpsBoardSettings:
-    global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
+    global _BOOTSTRAPPED, _EXPORT_ENABLED, _LOGGER_PROVIDER, _SETTINGS, _TRACER_PROVIDER
     if _BOOTSTRAPPED:
         _validate_rebootstrap(settings, export)
         if _SETTINGS is None:
@@ -62,30 +64,42 @@ def _bootstrap_observability_locked(settings: OpsBoardSettings, export: bool) ->
     resource = Resource.create(_resource_attributes(settings))
     tracer_provider = TracerProvider(resource=resource)
     logger_provider = LoggerProvider(resource=resource)
+    providers_installed = False
 
-    if export:
-        tracer_provider.add_span_processor(
-            BatchSpanProcessor(
-                OTLPSpanExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "traces"))
+    try:
+        if export:
+            tracer_provider.add_span_processor(
+                BatchSpanProcessor(
+                    OTLPSpanExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "traces"))
+                )
             )
-        )
-        logger_provider.add_log_record_processor(
-            BatchLogRecordProcessor(
-                OTLPLogExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "logs"))
+            logger_provider.add_log_record_processor(
+                BatchLogRecordProcessor(
+                    OTLPLogExporter(endpoint=_otlp_signal_endpoint(settings.otlp_endpoint, "logs"))
+                )
             )
+
+        trace.set_tracer_provider(tracer_provider)
+        set_logger_provider(logger_provider)
+        providers_installed = True
+        _ensure_active_otel_providers(tracer_provider, logger_provider)
+
+        if export:
+            _attach_logging_handler(logger_provider)
+            _configure_stdlib_logging()
+    except Exception:
+        _rollback_failed_bootstrap(
+            tracer_provider=tracer_provider,
+            logger_provider=logger_provider,
+            providers_installed=providers_installed,
         )
-
-    trace.set_tracer_provider(tracer_provider)
-    set_logger_provider(logger_provider)
-    _ensure_active_otel_providers(tracer_provider, logger_provider)
-
-    if export:
-        _configure_stdlib_logging()
-        _attach_logging_handler(logger_provider)
+        raise
 
     _BOOTSTRAPPED = True
     _SETTINGS = settings
     _EXPORT_ENABLED = export
+    _TRACER_PROVIDER = tracer_provider
+    _LOGGER_PROVIDER = logger_provider
     _LOGGER.info(
         "ops_board_observability_bootstrapped",
         extra={
@@ -172,12 +186,16 @@ def _otlp_signal_endpoint(base_endpoint: str, signal: str) -> str:
 
 
 def _reset_for_tests() -> None:
-    global _BOOTSTRAPPED, _EXPORT_ENABLED, _SETTINGS
+    global _BOOTSTRAPPED, _EXPORT_ENABLED, _LOGGER_PROVIDER, _SETTINGS, _TRACER_PROVIDER
     with _BOOTSTRAP_LOCK:
         _detach_logging_handler()
+        _shutdown_provider(_LOGGER_PROVIDER)
+        _shutdown_provider(_TRACER_PROVIDER)
         _BOOTSTRAPPED = False
         _SETTINGS = None
         _EXPORT_ENABLED = None
+        _LOGGER_PROVIDER = None
+        _TRACER_PROVIDER = None
         _reset_opentelemetry_globals_for_tests()
 
 
@@ -247,6 +265,24 @@ def _ensure_active_otel_providers(
         raise RuntimeError(
             "Ops Board observability failed to install its OpenTelemetry logger provider"
         )
+
+
+def _rollback_failed_bootstrap(
+    *,
+    tracer_provider: TracerProvider,
+    logger_provider: LoggerProvider,
+    providers_installed: bool,
+) -> None:
+    _detach_logging_handler()
+    _shutdown_provider(logger_provider)
+    _shutdown_provider(tracer_provider)
+    if providers_installed:
+        _reset_opentelemetry_globals_for_tests()
+
+
+def _shutdown_provider(provider: object | None) -> None:
+    if provider is not None:
+        cast(Any, provider).shutdown()
 
 
 def _configure_stdlib_logging() -> None:
