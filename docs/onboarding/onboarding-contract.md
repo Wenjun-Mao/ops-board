@@ -101,14 +101,15 @@ When a project uses environment variables instead of `ops-board.yaml`, it uses t
 
 ```dotenv
 OPS_BOARD_SERVICE_NAME=example-api
-OPS_BOARD_SERVICE_VERSION=0.1.0
+OPS_BOARD_VERSION=0.1.0
 OPS_BOARD_ENVIRONMENT=local
 OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-OPS_BOARD_KUMA_PUSH_URL=http://hp-15:3001/api/push/example-api
-OPS_BOARD_RUNTIME_HEARTBEAT_URL=http://<service-tailscale-host>:8000/heartbeat
+OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:8000/health
 ```
 
 `OPS_BOARD_CONFIG_FILE` selects a YAML file when Python does not start from that directory. `OPS_BOARD_SECRETS_DIR` selects the Docker secret-file directory when using secret files.
+
+Uptime Kuma monitor URLs are handled in monitor setup docs, not package config.
 
 The package also sets standard OpenTelemetry resource attributes in process. Projects may still use standard `OTEL_*` variables when they outgrow the package.
 
@@ -116,10 +117,11 @@ The package also sets standard OpenTelemetry resource attributes in process. Pro
 
 The v1 package loads config in this order:
 
-1. Docker secret files from `OPS_BOARD_SECRETS_DIR` or `/run/secrets`
-2. `OPS_BOARD_*` environment variables
-3. YAML config file
-4. Defaults
+1. Explicit function arguments
+2. Docker secret files from `OPS_BOARD_SECRETS_DIR` or `/run/secrets`
+3. `OPS_BOARD_*` environment variables
+4. YAML config file
+5. Defaults
 
 Example: if `ops-board.yaml` says `service.name: billing-api` but the process environment has `OPS_BOARD_SERVICE_NAME=billing-api-worker`, the package uses `billing-api-worker`.
 
