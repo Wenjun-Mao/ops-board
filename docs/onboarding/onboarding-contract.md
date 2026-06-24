@@ -81,11 +81,23 @@ ops_board:
   health_url: http://<service-tailscale-host>:8000/health
 ```
 
+## Python Config Channels
+
+Use one config channel first. Do not duplicate the same field in multiple places unless you are intentionally overriding it.
+
+| Channel | Use when | How `ops-board-observe` finds it |
+|---------|----------|-----------------------------------|
+| `ops-board.yaml` | First onboarding, local project runs, scripts, scheduled jobs | Automatically from the current working directory, or through `OPS_BOARD_CONFIG_FILE` |
+| `OPS_BOARD_*` environment variables | Docker Compose, CI, systemd, process managers | The process environment |
+| Docker secret files | Deployed values that should not appear in env or tracked files | `OPS_BOARD_SECRETS_DIR`, or `/run/secrets` by default |
+
+For a teammate onboarding a Python project by hand, ops-board.yaml is the default path. Environment variables are the deployment override path.
+
 ## Python Environment Variable Conventions
 
 The v1 Python integration contract is the `ops-board-observe` package. Projects install it as one dependency and import `ops_board_observe`. They should not copy helper files from the playground.
 
-Python projects using the v1 package use the `OPS_BOARD_` prefix:
+When a project uses environment variables instead of `ops-board.yaml`, it uses the `OPS_BOARD_` prefix:
 
 ```dotenv
 OPS_BOARD_SERVICE_NAME=example-api
@@ -111,6 +123,8 @@ The v1 package loads config in this order:
 3. `OPS_BOARD_*` environment variables
 4. YAML config file
 5. Defaults
+
+Example: if `ops-board.yaml` says `service.name: billing-api` but the process environment has `OPS_BOARD_SERVICE_NAME=billing-api-worker`, the package uses `billing-api-worker`.
 
 Secret files use lower-case field names, for example:
 
