@@ -207,7 +207,7 @@ services:
 
   # Comment this if you using any external s3 compatible storage
   plane-minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     command: server /export --console-address ":9090"
     deploy:
       replicas: 1
