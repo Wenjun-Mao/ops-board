@@ -1,6 +1,6 @@
 # First-Run Accounts
 
-Ops Board automates Uptime Kuma first-run setup. SigNoz and Plane first admin/workspace setup remain manual for v1 by decision in `docs/adr/003-first-run-account-boundary.md`.
+Ops Board automates Uptime Kuma first-run setup, core monitor creation, and Git-managed project-monitor reconciliation. SigNoz and Plane first admin/workspace setup remain manual for v1 by decision in `docs/adr/003-first-run-account-boundary.md`.
 
 Use this runbook after the stack is running on HP-15:
 

@@ -234,15 +234,15 @@ Use these docs when operating the board or connecting projects to it:
 
 - `docs/monitoring/ops-board-user-manual.md` - how to use Ops Board day to day.
 - `docs/monitoring/first-run-accounts.md` - SigNoz and Plane first admin/workspace setup checklist.
-- `docs/onboarding/human-guide.md` - why and how colleagues should onboard projects.
-- `docs/onboarding/onboarding-contract.md` - stable service identity and telemetry contract.
+- `docs/onboarding/human-guide.md` - agentless health monitoring first, then optional telemetry.
+- `docs/onboarding/onboarding-contract.md` - health-monitor registry and optional telemetry contract.
 - `docs/onboarding/onboarding-design-playbook.md` - reusable lessons for designing future onboarding flows.
 - `docs/onboarding/codex-guide.md` - machine-friendly onboarding instructions for Codex sessions.
 - `examples/onboarding/README.md` - dummy API/job playground for testing the experience.
 
 ## Current Priorities
 
-1. Onboard the first real project using `docs/onboarding/*` and the onboarding playground as the baseline.
+1. Operate the first Git-managed project health monitor, then add telemetry only where deeper evidence is useful.
 2. Finish stack-specific backup and restore jobs.
 3. Decide whether Healthchecks adds value beyond Uptime Kuma after a real scheduled-job pilot.
 4. Revisit a reverse proxy only after Tailscale-first access feels limiting.

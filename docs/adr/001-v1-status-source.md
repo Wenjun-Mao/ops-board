@@ -28,7 +28,7 @@ Healthchecks is deferred until scheduled-job monitoring in real projects proves 
 
 - Uptime Kuma monitor setup is code-backed through `stacks/uptime-kuma/bootstrap/monitors.yaml`, with manual monitor docs kept as a fallback.
 - Homepage cleanup should favor clear links and a single Uptime Kuma widget over duplicate direct status widgets.
-- New project onboarding should first add an endpoint/job signal to Uptime Kuma and telemetry to SigNoz before adding more tooling.
+- New project onboarding should first register an existing service health endpoint in Uptime Kuma when one exists. Telemetry in SigNoz is an optional deeper tier and the current execution-evidence path for one-shot jobs.
 - Local Uptime Kuma data becomes valuable after first-run setup; avoid `docker compose down -v` unless intentionally resetting the board.
 
 ## Guardrails

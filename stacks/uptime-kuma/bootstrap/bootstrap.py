@@ -5,10 +5,11 @@ import sys
 from pathlib import Path
 from threading import Event
 from typing import Any
+from urllib.parse import urlparse
 
 import socketio
 import yaml
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from tenacity import (
     retry,
@@ -20,6 +21,7 @@ from tenacity import (
 
 
 DOCKER_SECRET_PASSWORD_PATH = Path("/run/secrets/uptime_kuma_admin_password")
+PROJECT_MONITOR_MARKER_PREFIX = "Ops Board registry ID: "
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -109,9 +111,41 @@ class MonitorDefinition(BaseModel):
     optional: bool = False
 
 
+class ProjectMonitorDefinition(BaseModel):
+    id: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    name: str = Field(min_length=1)
+    url: str
+    accepted_statuscodes: list[str] = Field(default_factory=lambda: ["200-299"])
+    enabled: bool = True
+    interval_seconds: int = Field(default=60, ge=1)
+    retry_interval_seconds: int = Field(default=60, ge=1)
+    max_retries: int = Field(default=0, ge=0)
+    max_redirects: int = Field(default=10, ge=0)
+    verify_tls: bool = True
+
+    @field_validator("url")
+    @classmethod
+    def validate_http_url(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("project monitor URLs must use http:// or https://")
+        return value
+
+
 class BootstrapConfig(BaseModel):
     status_page: StatusPageConfig
     monitors: list[MonitorDefinition]
+    project_monitors: list[ProjectMonitorDefinition] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_unique_project_monitor_ids(self) -> BootstrapConfig:
+        ids = [monitor.id for monitor in self.project_monitors]
+        duplicates = sorted({monitor_id for monitor_id in ids if ids.count(monitor_id) > 1})
+        if duplicates:
+            raise ValueError(
+                "project monitor IDs must be unique: " + ", ".join(duplicates)
+            )
+        return self
 
 
 def load_bootstrap_config(path: Path) -> BootstrapConfig:
@@ -174,11 +208,101 @@ def build_monitor_payload(definition: MonitorDefinition) -> dict[str, Any]:
     }
 
 
+def project_monitor_description(definition: ProjectMonitorDefinition) -> str:
+    return (
+        f"{PROJECT_MONITOR_MARKER_PREFIX}{definition.id}\n"
+        "Managed by the Ops Board project-monitor registry."
+    )
+
+
+def build_project_monitor_payload(definition: ProjectMonitorDefinition) -> dict[str, Any]:
+    payload = build_monitor_payload(
+        MonitorDefinition(
+            name=definition.name,
+            url=definition.url,
+            accepted_statuscodes=definition.accepted_statuscodes,
+        )
+    )
+    payload.update(_project_monitor_managed_values(definition))
+    return payload
+
+
+def build_project_monitor_update_payload(
+    existing: dict[str, Any], definition: ProjectMonitorDefinition
+) -> dict[str, Any]:
+    monitor_id = existing.get("id")
+    if monitor_id is None:
+        raise ValueError(f"Registry-owned monitor {definition.id!r} has no monitor ID.")
+
+    payload = build_project_monitor_payload(definition)
+    payload.update(existing)
+    payload.update(_project_monitor_managed_values(definition))
+    payload["id"] = int(monitor_id)
+    return payload
+
+
+def project_monitor_needs_update(
+    existing: dict[str, Any], definition: ProjectMonitorDefinition
+) -> bool:
+    expected = _project_monitor_managed_values(definition)
+    return any(existing.get(field) != value for field, value in expected.items())
+
+
+def _project_monitor_managed_values(
+    definition: ProjectMonitorDefinition,
+) -> dict[str, Any]:
+    return {
+        "type": "http",
+        "name": definition.name,
+        "description": project_monitor_description(definition),
+        "parent": None,
+        "url": definition.url,
+        "method": "GET",
+        "interval": definition.interval_seconds,
+        "retryInterval": definition.retry_interval_seconds,
+        "resendInterval": 0,
+        "maxretries": definition.max_retries,
+        "retryOnlyOnStatusCodeFailure": False,
+        "ignoreTls": not definition.verify_tls,
+        "maxredirects": definition.max_redirects,
+        "accepted_statuscodes": definition.accepted_statuscodes,
+        "active": definition.enabled,
+    }
+
+
 def missing_monitors(
     configured: list[MonitorDefinition],
     existing_by_name: dict[str, dict[str, Any]],
 ) -> list[MonitorDefinition]:
     return [monitor for monitor in configured if monitor.name not in existing_by_name]
+
+
+def reconcile_project_monitors(
+    client: KumaClient, configured: list[ProjectMonitorDefinition]
+) -> None:
+    existing_monitor_list = client.get_monitor_list()
+    existing_by_name = _monitor_list_by_name(existing_monitor_list)
+    owned_by_id = _project_monitors_by_id(existing_monitor_list)
+
+    for monitor in configured:
+        existing = owned_by_id.get(monitor.id)
+        if existing is not None:
+            if project_monitor_needs_update(existing, monitor):
+                client.edit_monitor(build_project_monitor_update_payload(existing, monitor))
+                print(f"Updated project monitor: {monitor.name}")
+            else:
+                print(f"Project monitor already current: {monitor.name}")
+            continue
+
+        if monitor.name in existing_by_name:
+            raise RuntimeError(
+                f"Cannot create project monitor {monitor.name!r}: a monitor with that "
+                "name already exists but is not owned by the Ops Board registry. "
+                "Rename the registry entry or resolve the existing monitor manually."
+            )
+
+        client.add_monitor(build_project_monitor_payload(monitor))
+        print(f"Created project monitor: {monitor.name}")
 
 
 class KumaClient:
@@ -267,6 +391,10 @@ class KumaClient:
             raise RuntimeError("Uptime Kuma add response did not include monitorID.")
         return int(monitor_id)
 
+    def edit_monitor(self, payload: dict[str, Any]) -> None:
+        response = self.call("editMonitor", payload)
+        _require_ok(response, "editMonitor")
+
     def ensure_status_page(self, status_page: StatusPageConfig, monitor_ids: list[int]) -> None:
         page_response = self.call("getStatusPage", status_page.slug)
         if not _is_ok(page_response):
@@ -321,6 +449,8 @@ def bootstrap(settings: Settings, skip_optional: bool = False) -> None:
         if not missing:
             print("All configured monitors already exist.")
 
+        reconcile_project_monitors(client, config.project_monitors)
+
         refreshed_by_name = _monitor_list_by_name(client.get_monitor_list())
         baseline_monitor_ids = [
             int(refreshed_by_name[monitor.name]["id"])
@@ -345,6 +475,37 @@ def _monitor_list_by_name(
         monitor_with_id.setdefault("id", monitor_id)
         by_name[str(name)] = monitor_with_id
     return by_name
+
+
+def _project_monitors_by_id(
+    monitor_list: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    owned_by_id: dict[str, dict[str, Any]] = {}
+    for monitor_id, monitor in monitor_list.items():
+        project_id = _project_monitor_id_from_description(monitor.get("description"))
+        if project_id is None:
+            continue
+
+        if project_id in owned_by_id:
+            raise RuntimeError(
+                f"Multiple Uptime Kuma monitors claim Ops Board registry ID {project_id!r}."
+            )
+
+        monitor_with_id = dict(monitor)
+        monitor_with_id.setdefault("id", monitor_id)
+        owned_by_id[project_id] = monitor_with_id
+    return owned_by_id
+
+
+def _project_monitor_id_from_description(description: Any) -> str | None:
+    if not isinstance(description, str):
+        return None
+
+    for line in description.splitlines():
+        if line.startswith(PROJECT_MONITOR_MARKER_PREFIX):
+            project_id = line.removeprefix(PROJECT_MONITOR_MARKER_PREFIX).strip()
+            return project_id or None
+    return None
 
 
 def _build_status_page_config(

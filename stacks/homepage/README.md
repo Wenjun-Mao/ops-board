@@ -39,6 +39,8 @@ UPTIME_KUMA_STATUS_SLUG=ops-board
 
 Run `./scripts/bootstrap-uptime-kuma.sh` before expecting the widget to show useful data. The bootstrap creates or updates the `ops-board` status page.
 
+That widget represents Ops Board infrastructure only. Git-managed project monitors remain visible in the private Uptime Kuma dashboard and do not change Homepage's platform-health signal.
+
 ## Commands
 
 Show status:

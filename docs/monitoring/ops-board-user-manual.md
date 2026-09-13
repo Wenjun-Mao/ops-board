@@ -57,24 +57,27 @@ Uptime Kuma is bootstrapped by code. SigNoz and Plane first admin/workspace setu
 
 ## Maintainer/Admin Workflow: Onboard A Colleague Project
 
-Before asking the colleague to install the package or edit app code, ask them to run this from the target runtime host:
+Start with an existing anonymous health endpoint. Do not ask a colleague to install a package or edit code merely to create the first useful signal.
 
-```bash
-curl -fsS --max-time 20 http://hp-15:13133/
-```
+When the colleague provides a display name, exact health URL, target reachability, and expected successful status:
 
-If it fails, solve the Tailscale, DNS, firewall, or collector reachability issue first. This avoids debugging app instrumentation when the project host cannot reach Ops Board yet.
+1. On HP-15, validate the URL from the Uptime Kuma container, not only from your Mac or the HP-15 shell:
 
-When a colleague provides a service name, runtime host, and health URL:
+   ```bash
+   docker exec uptime-kuma node -e 'fetch("<health-url>", { signal: AbortSignal.timeout(20000) }).then((response) => { console.log(response.status); process.exit(response.ok ? 0 : 1); }).catch((error) => { console.error(error.message); process.exit(1); })'
+   ```
 
-1. Open Uptime Kuma at `http://hp-15:3001`.
-2. Create or confirm an HTTP monitor for the health URL.
-3. Use the project service name in the monitor name.
-4. Confirm the monitor can reach the health endpoint from Ops Board.
-5. Add or update Homepage links only when the project should appear on the launch board.
-6. Ask the colleague to run one request or job so SigNoz receives a trace for the service name.
+2. Add a stable `project_monitors` entry to `stacks/uptime-kuma/bootstrap/monitors.yaml`.
+3. Run `./scripts/bootstrap-uptime-kuma.sh`.
+4. Open Uptime Kuma at `http://hp-15:3001` and confirm the monitor is Up exactly once.
+5. Confirm it is absent from `http://hp-15:3001/status/ops-board`; that status page is for Ops Board infrastructure only.
+6. Add a Homepage link only when the project itself should be a launch-board destination.
 
-The colleague owns the target project code and health endpoint. The Ops Board maintainer/admin owns monitor naming, monitor placement, status-page placement, and Ops Board-side links.
+Use a Tailscale/private HTTP URL when Uptime Kuma can route to the service over the tailnet, or a public HTTPS URL when the health endpoint is intentionally public. Public target URLs do not make Ops Board public. Keep TLS verification enabled unless a future documented exception applies.
+
+Only after this first tier should you offer optional `ops-board-observe` telemetry. For that tier, ask the target runtime host to run `curl -fsS --max-time 20 http://hp-15:13133/` before package installation. A one-shot job with no health endpoint needs telemetry or a future heartbeat/push workflow; an HTTP check cannot prove it ran.
+
+The colleague owns target code and endpoint availability. The Ops Board maintainer/admin owns registry changes, monitor placement, status-page isolation, and Ops Board-side links.
 
 ## Common Workflow: Service Looks Down
 
@@ -140,7 +143,9 @@ Use Uptime Kuma for health status and status page checks. It is the v1 status so
 
 ![Uptime Kuma first-run setup](images/uptime-kuma-first-run.png)
 
-On a clean rebuild, run `./scripts/bootstrap-uptime-kuma.sh` after the container starts. The script selects embedded MariaDB through Compose settings, creates the first local admin user from `secrets/uptime_kuma_admin_password` when needed, and applies the baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`.
+On a clean rebuild, run `./scripts/bootstrap-uptime-kuma.sh` after the container starts. The script selects embedded MariaDB through Compose settings, creates the first local admin user from `secrets/uptime_kuma_admin_password` when needed, applies core monitors, and reconciles Git-managed project monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`.
+
+The `ops-board` status page and Homepage widget contain core Ops Board monitors only. Project monitors appear in the Uptime Kuma dashboard but do not change the platform-health widget.
 
 ### SigNoz
 
@@ -174,5 +179,5 @@ Current manual steps:
 
 - Create SigNoz and Plane first admin/workspace accounts through their UIs, using `docs/monitoring/first-run-accounts.md`.
 - Add real project entries to Homepage manually.
-- Create or confirm real project Uptime Kuma monitors manually after the colleague provides the health URL.
+- Retire a project monitor explicitly in Uptime Kuma after removing its registry entry; bootstrap intentionally does not delete history.
 - Use project docs to track ownership and runtime location.

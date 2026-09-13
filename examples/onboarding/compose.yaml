@@ -16,7 +16,6 @@ services:
       OPS_BOARD_OWNER: mk
       OPS_BOARD_RUNTIME_HOST: docker
       OPS_BOARD_OTLP_ENDPOINT: http://host.docker.internal:4318
-      OPS_BOARD_HEALTH_URL: http://localhost:${DUMMY_API_PORT:-18080}/health
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

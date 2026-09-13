@@ -28,3 +28,11 @@ monitors:
     url: http://host.docker.internal:18080/health
     accepted_statuscodes: ["200-299"]
     optional: true
+
+# Project monitors are Git-managed and appear only in the Uptime Kuma dashboard.
+# They are intentionally excluded from the core ops-board status page and Homepage widget.
+project_monitors:
+  - id: spark-h3-gateway
+    name: Spark H3 Gateway
+    url: http://100.64.35.71:8090/health
+    accepted_statuscodes: ["200-299"]

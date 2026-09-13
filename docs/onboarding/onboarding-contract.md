@@ -1,102 +1,65 @@
 # Ops Board Onboarding Contract
 
-This contract defines what it means for a project to be onboarded to Ops Board.
+Ops Board is a private operating center for services and jobs that run across local computers, VPSs, and cloud providers. Tailscale is the dashboard access boundary for v1. A public target health URL does not change that boundary.
 
-Ops Board is the private operating center for services and jobs that run across local computers, VPSs, and cloud providers. Tailscale is the network boundary for v1. Public reverse proxy access is intentionally deferred.
+Project onboarding has two independent tiers. Complete the first tier whenever an existing API has a suitable health endpoint; add the second only when richer operational evidence is worth a project change.
 
-## Required Identity
+## Tier 1: Agentless Health Monitoring
 
-Every onboarded project must define:
+The target project makes no package, dependency, or code change. The project owner supplies a reachable anonymous HTTP health URL; the Ops Board maintainer/admin owns its Uptime Kuma registry entry.
+
+The Git-backed registry is `stacks/uptime-kuma/bootstrap/monitors.yaml`:
+
+```yaml
+project_monitors:
+  - id: billing-api
+    name: Billing API
+    url: https://api.example.com/health
+    accepted_statuscodes: ["200-299"]
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `id` | Yes | Stable, unique lowercase kebab-case key. It is the reconciliation identity, not a display label. |
+| `name` | Yes | Human-friendly Uptime Kuma label. It may change without replacing the monitor. |
+| `url` | Yes | Anonymous `http://` or `https://` endpoint reachable from the Uptime Kuma container. |
+| `accepted_statuscodes` | No | Defaults to `["200-299"]`. |
+| `enabled` | No | Defaults to `true`; use `false` to retain but pause a check. |
+| HTTP timing/TLS fields | No | Code-backed defaults are documented in `stacks/uptime-kuma/docs/monitors.md`. |
+
+The bootstrap creates and updates only monitors marked with the registry ID. It never deletes a removed entry and never adopts a same-named manual monitor. Project monitors are private dashboard entries, not members of the core `ops-board` status page or Homepage widget.
+
+### URL Reachability
+
+| Target type | Example | Rule |
+|-------------|---------|------|
+| Private tailnet service | `http://api-host.tailnet-name.ts.net:8000/health` | Use a MagicDNS name or Tailscale IP that the Ops Board host can route to. |
+| Public service | `https://api.example.com/health` | Uptime Kuma makes an outbound HTTPS check while Ops Board remains private. |
+
+TLS verification is on by default. Authenticated health endpoints, request headers, and notification providers are not part of the first-tier registry. Their secrets must never be committed.
+
+## Tier 2: Optional Telemetry
+
+`ops-board-observe` is the Python integration contract for traces, logs, and execution-level evidence. It is optional for services already covered by Tier 1, and it is the current useful path for a one-shot job that has no health endpoint.
+
+When a project opts in, it defines a stable telemetry identity:
 
 | Field | Required | Example | Notes |
 |-------|----------|---------|-------|
-| `service.name` | Yes | `billing-api` | Stable service name used in SigNoz and docs. |
-| `service.namespace` | Yes | `content-shuttle` | Project group, client group, or repo family. |
-| `deployment.environment` | Yes | `local`, `staging`, `prod` | Keep values short and consistent. |
-| `owner` | Yes | `mk`, `ops`, `data-team` | Person or team responsible for first response. |
-| `runtime.host` | Yes | `hu-workstation` | Hostname or VPS name where the project runs. |
-| `tailscale.host` | Recommended | `hu-workstation.tailnet-name.ts.net` | Use when the service is reachable through Tailscale. |
-| `runtime.provider` | Optional | `local`, `hetzner`, `aws` | Useful when projects span providers. |
-| `runtime.country` | Optional | `CA`, `US`, `JP` | Useful when latency or data location matters. |
+| `service.name` | Yes | `billing-api` | Stable service label in SigNoz. |
+| `service.namespace` | Yes | `billing` | Project, repo family, product, or team group. |
+| `deployment.environment` | Yes | `prod` | Use a short label such as `local`, `dev`, `test`, `staging`, or `prod`. |
+| `owner` | Yes | `data-team` | Person or team responsible for first response. |
+| `runtime.host` | Yes | `billing-vps-1` | Actual runtime hostname or VPS name. |
+| `tailscale.host` | Recommended | `billing-host.tailnet-name.ts.net` | MagicDNS name when it exists. |
+| `runtime.provider` | Optional | `aws` | Useful in multi-provider environments. |
+| `runtime.country` | Optional | `CA` | Useful for latency and data-location context. |
 
-The Python package has defaults so local tests can run without config, but those defaults are not enough for real onboarding:
+The package's local-test defaults are not sufficient for real telemetry onboarding: `service_name=unknown-service`, `service_namespace=default`, `environment=local`, `owner=unknown`, `version=0.1.0`, `runtime_host=<OS hostname>`, `tailscale_host=None`, and `otlp_endpoint=http://localhost:4318`.
 
-| Package field | Default | Real onboarding rule |
-|---------------|---------|----------------------|
-| `service_name` | `unknown-service` | Replace with a stable service name. |
-| `service_namespace` | `default` | Replace with a project, repo, product, client, or team group. |
-| `environment` | `local` | Replace unless the runtime really is local. Accepted values are conventions, not a code enum; use short labels such as `local`, `dev`, `test`, `staging`, or `prod`. |
-| `owner` | `unknown` | Replace with the person or team responsible for first response. |
-| `version` | `0.1.0` | Keep only during early onboarding; use the app version, package version, commit tag, or release label when available. |
-| `runtime_host` | Python OS hostname | Confirm it identifies the actual runtime host clearly. |
-| `tailscale_host` | empty | Fill when the runtime host has a stable Tailscale MagicDNS name or Tailscale IP. |
-| `otlp_endpoint` | `http://localhost:4318` | Use `http://hp-15:4318` for projects not running directly on HP-15. |
-| `health_url` | empty | Fill for long-running services with a health endpoint; omit for one-shot jobs. |
+`health_url` remains accepted package compatibility metadata but is not a source for monitor provisioning. The registry above is authoritative.
 
-The package uses these values as OpenTelemetry resource attributes: `service.name`, `service.namespace`, `service.version`, `deployment.environment`, `service.owner`, `host.name`, and optional `ops_board.tailscale_host`, `ops_board.runtime_provider`, and `ops_board.runtime_country`. `health_url` is project handoff metadata for Uptime Kuma monitor setup; it is not sent as a resource attribute.
-
-Tailscale host values come from Tailscale MagicDNS. The machine name is shown in the Tailscale app and Machines page. The full DNS name is the machine name plus the tailnet DNS name, for example `billing-host.tailnet-name.ts.net`. If MagicDNS is not clear, the project owner can share the Tailscale IP and the Ops Board maintainer/admin can decide what to monitor.
-
-## Required Signals
-
-Every onboarded project should expose or emit:
-
-| Signal | Tool | Required | Purpose |
-|--------|------|----------|---------|
-| Health endpoint | Project plus Uptime Kuma | Yes for services, recommended for long-running workers | Project exposes it; Ops Board maintainer/admin monitors it. |
-| Traces | SigNoz | Yes for APIs and important jobs | Shows what happened inside a request or job run. |
-| Logs | SigNoz or Docker logs | Recommended | Provides context around failures and important events. |
-| Metrics | SigNoz | Optional for v1 | Useful after the basic health/tracing flow works. |
-| Operator links | Homepage | Recommended | Gives teammates one place to start. |
-| Follow-up tasks | Plane | Optional | Tracks work after an issue becomes actionable. |
-
-## Role Ownership
-
-| Role | Owns | Does not need to own |
-|------|------|----------------------|
-| Project owner or colleague | Project package install, `ops-board.yaml` or `OPS_BOARD_*` values, health endpoint, app/job telemetry, project docs for owner and runtime host | Uptime Kuma monitor creation, Homepage entries, Plane workspace/admin setup, Ops Board credentials |
-| Ops Board maintainer/admin | Uptime Kuma monitors, Homepage entries, Ops Board-side links, SigNoz and Plane admin/workspace setup, monitor naming and status-page placement | Target project code unless explicitly helping with onboarding |
-
-When a person is wearing both hats, they may do both sets of work. The docs should still label Ops Board maintainer/admin steps so the handoff is visible.
-
-## Endpoint Conventions
-
-For the HP-15 deployment, colleague projects and other tailnet machines should use:
-
-```text
-OTLP HTTP:         http://hp-15:4318
-SigNoz UI:         http://hp-15:8080
-Uptime Kuma:       http://hp-15:3001
-Homepage:          http://hp-15:3000
-Plane:             http://hp-15:8082
-Collector health:  http://hp-15:13133
-```
-
-For local testing from a shell or browser running directly on `hp-15`, or for playground-local checks on that host, use:
-
-```text
-OTLP HTTP (only for code running directly on hp-15 or playground-local checks): http://localhost:4318
-OTLP gRPC (only for code running directly on hp-15 or playground-local checks): http://localhost:4317
-Collector health:                                                        http://localhost:13133
-SigNoz UI:                                                               http://localhost:8080
-Uptime Kuma:                                                             http://localhost:3001
-Homepage:                                                                http://localhost:3000
-Plane:                                                                   http://localhost:8082
-```
-
-For non-HP-15 deployments, replace `hp-15` with the Ops Board host's Tailscale MagicDNS name or Tailscale IP.
-
-Before a project owner edits code, the project runtime host should pass this reachability preflight:
-
-```bash
-curl -fsS --max-time 20 http://hp-15:13133/
-```
-
-This preflight proves the target host can reach the collector health endpoint over Tailscale. It does not prove traces or logs are being emitted; that evidence comes after running the app or job.
-
-## App Config Shape
-
-Projects should be able to express onboarding config in this shape:
+### Package Configuration
 
 ```yaml
 service:
@@ -114,85 +77,54 @@ runtime:
 
 ops_board:
   otlp_endpoint: http://hp-15:4318
-  health_url: http://<service-tailscale-host>:8000/health
 ```
 
-## Python Config Channels
+Projects can instead use `OPS_BOARD_*` environment variables or Docker secret files. Configuration precedence remains: explicit function arguments, secret files, environment variables, YAML, then defaults. See ADR 005 for package runtime semantics.
 
-Use one config channel first. Do not duplicate the same field in multiple places unless you are intentionally overriding it.
+## Ownership
 
-| Channel | Use when | How `ops-board-observe` finds it |
-|---------|----------|-----------------------------------|
-| `ops-board.yaml` | First onboarding, local project runs, scripts, scheduled jobs | Automatically from the current working directory, or through `OPS_BOARD_CONFIG_FILE` |
-| `OPS_BOARD_*` environment variables | Docker Compose, CI, systemd, process managers | The process environment |
-| Docker secret files | Deployed values that should not appear in env or tracked files | `OPS_BOARD_SECRETS_DIR`, or `/run/secrets` by default |
+| Role | Owns |
+|------|------|
+| Project owner or colleague | Existing health endpoint availability, endpoint details, optional app/package changes, telemetry identity, and project docs. |
+| Ops Board maintainer/admin | Registry changes, Uptime Kuma bootstrap and lifecycle, dashboard placement, Ops Board credentials, and SigNoz/Plane first-run setup. |
 
-For a teammate onboarding a Python project by hand, `ops-board.yaml` is the default path. Environment variables are the deployment override path.
+When one person does both roles, preserve the distinction in docs and handoffs. A target-project Codex session must not edit Ops Board monitor state unless it is explicitly acting as the maintainer/admin.
 
-## Python Environment Variable Conventions
+## HP-15 Endpoint Conventions
 
-The v1 Python integration contract is the `ops-board-observe` package. Projects install it as one dependency and import `ops_board_observe`. They should not copy helper files from the playground.
-
-When a project uses environment variables instead of `ops-board.yaml`, it uses the `OPS_BOARD_` prefix:
-
-```dotenv
-OPS_BOARD_SERVICE_NAME=example-api
-OPS_BOARD_SERVICE_NAMESPACE=ops-board.examples
-OPS_BOARD_ENVIRONMENT=local
-OPS_BOARD_OWNER=mk
-OPS_BOARD_VERSION=0.1.0
-OPS_BOARD_RUNTIME_HOST=example-host
-OPS_BOARD_TAILSCALE_HOST=example-host.tailnet-name.ts.net
-OPS_BOARD_OTLP_ENDPOINT=http://hp-15:4318
-OPS_BOARD_HEALTH_URL=http://<service-tailscale-host>:8000/health
-```
-
-`OPS_BOARD_CONFIG_FILE` selects a YAML file when Python does not start from that directory. `OPS_BOARD_SECRETS_DIR` selects the Docker secret-file directory when using secret files.
-
-Uptime Kuma monitor URLs are handled in monitor setup docs, not package config.
-
-The package also sets standard OpenTelemetry resource attributes in process. Projects may still use standard `OTEL_*` variables when they outgrow the package.
-
-## Python Package Config Precedence
-
-The v1 package loads config in this order:
-
-1. Explicit function arguments
-2. Docker secret files from `OPS_BOARD_SECRETS_DIR` or `/run/secrets`
-3. `OPS_BOARD_*` environment variables
-4. YAML config file
-5. Defaults
-
-Example: if `ops-board.yaml` says `service.name: billing-api` but the process environment has `OPS_BOARD_SERVICE_NAME=billing-api-worker`, the package uses `billing-api-worker`.
-
-Secret files use lower-case field names, for example:
+For projects running elsewhere on the tailnet:
 
 ```text
-/run/secrets/service_name
-/run/secrets/owner
-/run/secrets/otlp_endpoint
+OTLP HTTP:         http://hp-15:4318
+SigNoz UI:         http://hp-15:8080
+Uptime Kuma:       http://hp-15:3001
+Homepage:          http://hp-15:3000
+Plane:             http://hp-15:8082
+Collector health:  http://hp-15:13133
 ```
 
-## Acceptance Checklist
+Use `localhost` only from code, a shell, or a browser running directly on HP-15. For a different Ops Board host, replace `hp-15` with that host's Tailscale MagicDNS name or Tailscale IP.
 
-A project is onboarded when all required items are true:
+Before a telemetry integration changes app code, its runtime host should pass:
 
-- It has a stable service name, namespace, environment, and owner.
-- It documents where it runs and how it reaches Ops Board over Tailscale.
-- Its runtime host can reach the Ops Board collector health endpoint.
-- A long-running service exposes a health endpoint and the health URL is recorded.
-- The Ops Board maintainer/admin can create or confirm the Uptime Kuma monitor for that health endpoint.
-- A Python job or key function emits an observed span with success/failure status.
-- A web/API service emits request-level traces or observed key-function spans.
-- Logs include enough context to identify service, host, environment, and run/request.
-- A teammate can find the project from project docs, and the Ops Board maintainer/admin has enough information to add or update Homepage when needed.
+```bash
+curl -fsS --max-time 20 http://hp-15:13133/
+```
 
-## Evidence Checklist
+This is a collector reachability preflight, not proof of successful export.
 
-After onboarding, capture or link concise evidence for:
+## Acceptance And Evidence
 
-- Network preflight evidence: from the project runtime host, `curl -fsS --max-time 20 http://hp-15:13133/` succeeds.
-- Config evidence: service identity, runtime host, Tailscale host, OTLP endpoint, and health URL are present in env, secrets, compose, or project docs.
-- App/job run evidence: at least one successful app request or job run completed with the onboarded config.
-- SigNoz evidence: traces and logs identify the expected service name, environment, owner, and runtime host.
-- Health monitor evidence: when a health endpoint exists, the Ops Board maintainer/admin confirms Uptime Kuma or the chosen monitor can reach it successfully.
+Tier 1 is complete when:
+
+- The maintainer validates the endpoint from Uptime Kuma.
+- The Git-managed project monitor appears once and reports Up.
+- The core `ops-board` status page remains limited to Ops Board baseline monitors.
+
+Tier 2 adds:
+
+- A real request or job run with the intended configuration.
+- SigNoz evidence for the expected service name and environment.
+- Traces or logs that identify the expected owner and runtime host.
+
+For scheduled jobs without a health endpoint, do not claim Tier 1 confirms successful execution. Use Tier 2 evidence until a dedicated job heartbeat/push contract is designed.

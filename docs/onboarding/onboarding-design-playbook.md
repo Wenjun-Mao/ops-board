@@ -22,7 +22,8 @@ Keep project-owner work separate from Ops Board maintainer/admin work.
 
 Project owner or colleague owns:
 
-- package install or app dependency changes
+- existing health endpoint availability and its exact reachable URL
+- package install or app dependency changes when deeper telemetry is wanted
 - `ops-board.yaml`, `OPS_BOARD_*`, or deployment config
 - health endpoint implementation
 - app/job telemetry
@@ -30,13 +31,27 @@ Project owner or colleague owns:
 
 Ops Board maintainer/admin owns:
 
-- Uptime Kuma monitor creation and placement
+- Git-managed Uptime Kuma monitor registration, reconciliation, and placement
 - Homepage entries and Ops Board-side links
 - SigNoz and Plane first admin/workspace setup
 - Ops Board credentials and local stack secrets
 - monitor naming and status-page placement
 
 When a person wears both hats, keep the labels anyway. The labels make handoff and future automation boundaries visible.
+
+## Start With The Smallest Useful Signal
+
+Do not require application changes when an existing API already exposes a reachable anonymous health endpoint. The first onboarding question is:
+
+```text
+Can Uptime Kuma reach an existing health URL from the Ops Board host?
+```
+
+If yes, the colleague supplies the display name, exact URL, target reachability, and expected successful status; the maintainer/admin records the monitor in Git and runs bootstrap. Keep project monitors out of the core Ops Board status page so a project incident does not become a platform-health incident.
+
+Use public HTTPS targets as outbound checks only. They do not imply that Ops Board dashboards are public. Keep TLS verification on by default and defer authenticated checks until their credentials have a secrets-backed contract.
+
+Use package telemetry as the next tier for traces, logs, and job execution evidence. A one-shot job with no health endpoint cannot be proven successful by HTTP monitoring alone.
 
 ## Put Preflights Before Code Changes
 
@@ -144,7 +159,8 @@ Before treating onboarding docs as ready, check:
 - Every command says where to run it when location matters.
 - Project-owner steps and maintainer/admin steps are visually distinct.
 - Required fields include defaults, usage, examples, and discovery instructions.
-- A reader can install the package without manually adding transitive dependencies.
+- A reader can complete agentless health monitoring without package installation or application changes.
+- A reader can install the package without manually adding transitive dependencies when deeper telemetry is wanted.
 - A reader can remove the package without hunting through chat history.
 - Screenshots are refreshed only when the UI state or documented workflow changes.
 - Historical plans are not used as current runbooks.

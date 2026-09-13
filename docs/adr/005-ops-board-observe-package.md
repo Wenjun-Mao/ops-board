@@ -12,6 +12,8 @@ Colleague project onboarding was too manual. The original observability helper w
 
 Ops Board observability will live in the `ops-board-observe` Python package and be imported as `ops_board_observe`. Until it is published to a package index, consuming projects install it from the repo git subdirectory. The package owns its OpenTelemetry, settings, YAML, and retry dependencies instead of asking each consumer to copy helper code or dependency lists.
 
+This package is an optional deeper-observability tier. A project with an existing anonymous health endpoint can be onboarded first through the Git-managed Uptime Kuma registry without installing this package or changing application code; see ADR 006.
+
 The public helper API is:
 
 - `OpsBoardSettings`
@@ -44,6 +46,7 @@ Resource metadata includes standard service fields plus `service.owner`.
 ## Consequences
 
 - Separate projects can depend on one package contract instead of copying helpers.
+- Health-only project onboarding does not require a Python package, dependency, or target-project code change.
 - The package can later be published and versioned without changing import paths.
 - Host applications that already configure OpenTelemetry must coordinate bootstrap order with Ops Board observability.
 - First-call-wins avoids hidden in-process divergence, but it means tests and long-running hosts must reset or restart before changing observability settings.

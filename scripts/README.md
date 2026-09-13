@@ -41,7 +41,7 @@ Bootstraps Uptime Kuma after the container is running:
 
 - creates the first local admin user when setup is needed
 - logs in through Uptime Kuma's Socket.IO app contract
-- creates missing baseline monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`
+- creates missing core monitors and reconciles Git-managed project monitors from `stacks/uptime-kuma/bootstrap/monitors.yaml`
 - creates or updates the `ops-board` status page
 
 Run:
@@ -51,6 +51,8 @@ Run:
 ```
 
 The script reads the username from `.env` and the password from `secrets/uptime_kuma_admin_password`. It never prints the password.
+
+Project monitors live under `project_monitors` in the registry. They stay in the private Uptime Kuma dashboard and are intentionally excluded from the core `ops-board` status page and Homepage widget. Re-running bootstrap updates registry-owned project monitors but never deletes removed entries or adopts manually created monitors.
 
 If Uptime Kuma is already initialized from a manual setup, the bootstrap cannot create a new first admin user. Set `UPTIME_KUMA_ADMIN_USERNAME` and `UPTIME_KUMA_ADMIN_PASSWORD_FILE` to match the existing local admin account, or reset the Uptime Kuma volume before using the first-run bootstrap path.
 

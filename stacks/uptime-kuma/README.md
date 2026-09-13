@@ -28,13 +28,13 @@ http://<tailscale-hostname>:3001
 
 Uptime Kuma first-run setup is code-backed for normal Ops Board development.
 
-The Compose file selects embedded MariaDB, and `./scripts/bootstrap-uptime-kuma.sh` creates the first local admin user from `secrets/uptime_kuma_admin_password`, applies baseline monitors from `bootstrap/monitors.yaml`, and creates or updates the status page with this slug:
+The Compose file selects embedded MariaDB, and `./scripts/bootstrap-uptime-kuma.sh` creates the first local admin user from `secrets/uptime_kuma_admin_password`, creates missing core monitors, reconciles Git-managed project monitors from `bootstrap/monitors.yaml`, and creates or updates the core status page with this slug:
 
 ```text
 ops-board
 ```
 
-Homepage uses that status page slug for its Uptime Kuma widget.
+Homepage uses that status page slug for its Uptime Kuma widget. Project monitors stay in the private Uptime Kuma dashboard and are excluded from this core status page.
 
 ## Storage
 
