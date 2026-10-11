@@ -1,0 +1,5 @@
+services:
+  plane-db:
+    image: postgres:${PLANE_POSTGRES_TARGET_VERSION:-15.19-alpine}
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Preserve the existing database password}

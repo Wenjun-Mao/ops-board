@@ -1,0 +1,19 @@
+services:
+  signoz:
+    image: signoz/signoz:v0.135.0
+    environment: !override
+      SIGNOZ_ALERTMANAGER_PROVIDER: signoz
+      SIGNOZ_SQLSTORE_PROVIDER: sqlite
+      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: tcp://clickhouse:9000
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: clickhouse
+  otel-collector:
+    image: signoz/signoz-otel-collector:v0.144.6
+    volumes:
+      - ./stacks/signoz/maintenance/collector-v0.144.6-plus.yaml:/etc/otel-collector-config.yaml:ro
+  signoz-telemetrystore-migrator:
+    image: signoz/signoz-otel-collector:v0.144.6
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.12.5
+  init-clickhouse:
+    image: clickhouse/clickhouse-server:25.12.5

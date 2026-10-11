@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "prepared-not-deployed",
+  "project": "ops-board",
+  "official_assets": {
+    "docker-compose.yml": {
+      "url": "https://github.com/makeplane/plane/releases/download/v1.4.2/docker-compose.yml",
+      "sha256": "1560157357fcdcdd3b69d6a823a6bf497ab2b5e03a39888082ac0cab605986ae"
+    },
+    "variables.env": {
+      "url": "https://github.com/makeplane/plane/releases/download/v1.4.2/variables.env",
+      "sha256": "64db1740913f288d6c6af9f4824c020cde139591ac7dd555b02836dca86a1e06"
+    }
+  },
+  "baseline": {
+    "APP_RELEASE": "v1.3.1",
+    "PLANE_POSTGRES_VERSION": "15.7-alpine",
+    "PLANE_VALKEY_VERSION": "7.2.11-alpine",
+    "PLANE_RABBITMQ_VERSION": "3.13.6-management-alpine",
+    "PLANE_STORAGE_IMAGE": "quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e"
+  },
+  "observations_not_defaults": {
+    "rabbit_hostname": "3bb3429c1ce3",
+    "rabbit_node": "rabbit@3bb3429c1ce3",
+    "engine": "29.5.3",
+    "compose": "5.1.4",
+    "storage_release": "RELEASE.2025-09-07",
+    "storage_image_id": "sha256:69b2ec208575b69597784255eec6fa6a2985ee9e1a47f4411a51f7f5fdd193a9",
+    "storage_repo_digest": "quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+    "silo_registry_digest": "sha256:635197cb9f36d01bee221d34d1c7d7960f6a95c48b0b6c01d99cd13bdae51a46"
+  },
+  "stages": [
+    {
+      "id": "3-db",
+      "overlay": "stage3-db.yaml",
+      "versions": {"PLANE_POSTGRES_TARGET_VERSION": "15.19-alpine"},
+      "services": ["plane-db"],
+      "gate": "copied-data patch review, required index follow-ups, Plane queries"
+    },
+    {
+      "id": "3-cache",
+      "overlay": "stage3-cache.yaml",
+      "versions": {"PLANE_VALKEY_TARGET_VERSION": "7.2.14-alpine"},
+      "services": ["plane-redis"],
+      "gate": "separate checkpoint, persisted state, sessions and live pub/sub"
+    },
+    {
+      "id": "4-app",
+      "overlay": "stage4-app.yaml",
+      "versions": {"PLANE_APP_TARGET_RELEASE": "v1.4.2"},
+      "services": ["web", "space", "admin", "live", "api", "worker", "beat-worker", "migrator", "proxy"],
+      "gate": "explicit migrator exits zero; all images lockstep; real Plane flows"
+    },
+    {
+      "id": "5-storage",
+      "overlay": "stage5-storage.yaml",
+      "versions": {"PLANE_STORAGE_TARGET_IMAGE": "pgsty/silo:RELEASE.2026-09-16T00-00-00Z"},
+      "services": ["plane-minio"],
+      "gate": "full metadata copy, object hashes and IAM, real presigned flows and restart"
+    },
+    {
+      "id": "6-rabbit-bridge",
+      "overlay": "stage6-rabbit.yaml",
+      "versions": {"PLANE_RABBITMQ_TARGET_VERSION": "4.2.9-management-alpine"},
+      "services": ["plane-mq"],
+      "gate": "supported flags/Erlang transition, preserved node, cookie, queues/messages"
+    },
+    {
+      "id": "6-rabbit-final",
+      "overlay": "stage6-rabbit.yaml",
+      "versions": {"PLANE_RABBITMQ_TARGET_VERSION": "4.3.6-management-alpine"},
+      "services": ["plane-mq"],
+      "gate": "accepted bridge and flags, preserved identity, real Celery publish/ack"
+    }
+  ]
+}

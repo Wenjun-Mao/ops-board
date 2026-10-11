@@ -68,6 +68,9 @@ test_scripts_exist_and_parse() {
     scripts/status.sh
     scripts/update-stack.sh
     scripts/smoke-day1.sh
+    scripts/backup-stack.sh
+    scripts/restore-stack.sh
+    scripts/verify-stack.sh
   )
 
   for script in "${scripts[@]}"; do
@@ -104,7 +107,7 @@ test_init_local_config_generates_hp15_config() {
   assert_env_value "$temp_repo/.env" "SIGNOZ_PUBLIC_URL" "http://hp-15:8080"
   assert_env_value "$temp_repo/.env" "PLANE_PUBLIC_URL" "http://hp-15:8082"
   assert_env_value "$temp_repo/.env" "PLANE_WEB_URL" "http://hp-15:8082"
-  assert_contains "$temp_repo/.env" "HOMEPAGE_ALLOWED_HOSTS=localhost:3000,127.0.0.1:3000,hp-15:3000"
+  assert_env_value "$temp_repo/.env" "HOMEPAGE_ALLOWED_HOSTS" "localhost:3000,127.0.0.1:3000,hp-15:3000,host.docker.internal:3000"
 
   assert_env_value "$temp_repo/stacks/plane/plane.env" "APP_DOMAIN" "hp-15"
   assert_env_value "$temp_repo/stacks/plane/plane.env" "WEB_URL" "http://hp-15:8082"
@@ -132,19 +135,20 @@ test_init_local_config_keeps_and_rotates_secrets() {
 
 test_compose_wrappers_support_help_and_dry_run() {
   "$repo_root/scripts/bootstrap-uptime-kuma.sh" --help | grep -Fq "Usage:"
-  "$repo_root/scripts/status.sh" --help | grep -Fq "Usage:"
-  "$repo_root/scripts/update-stack.sh" --help | grep -Fq "Usage:"
+  "$repo_root/scripts/status.sh" --help | grep -Fq "usage:"
+  "$repo_root/scripts/update-stack.sh" --help | grep -Fq "usage:"
   "$repo_root/scripts/smoke-day1.sh" --help | grep -Fq "Usage:"
 
   local status_output
   status_output="$("$repo_root/scripts/status.sh" --stack uptime-kuma --dry-run)"
-  grep -Fq "stacks/uptime-kuma/compose.yaml" <<<"$status_output" || fail "status dry-run did not target uptime-kuma compose file"
+  grep -Fq "project=ops-board" <<<"$status_output" || fail "status did not retain root project"
+  grep -Fq "ps -a uptime-kuma" <<<"$status_output" || fail "status did not scope root service"
   grep -Fq "ps -a" <<<"$status_output" || fail "status dry-run did not include ps -a"
 
   local update_output
-  update_output="$("$repo_root/scripts/update-stack.sh" --stack homepage --remove-orphans --dry-run)"
-  grep -Fq "stacks/homepage/compose.yaml" <<<"$update_output" || fail "update dry-run did not target homepage compose file"
-  grep -Fq -- "--remove-orphans" <<<"$update_output" || fail "update dry-run did not include --remove-orphans"
+  update_output="$("$repo_root/scripts/update-stack.sh" --stack homepage --context standalone --dry-run)"
+  grep -Fq "stacks/homepage/compose.yaml" <<<"$update_output" || fail "explicit standalone target missing"
+  grep -Fq -- "--no-deps --no-recreate" <<<"$update_output" || fail "update did not guard recreation/dependencies"
 
   local bootstrap_output
   bootstrap_output="$("$repo_root/scripts/bootstrap-uptime-kuma.sh" --dry-run)"
@@ -214,5 +218,6 @@ test_init_local_config_keeps_and_rotates_secrets
 test_compose_wrappers_support_help_and_dry_run
 test_smoke_supports_help_and_dry_run
 test_smoke_retries_transient_http_failures
+python3 -m unittest discover -s "$repo_root/scripts/tests" -p 'test_maintenance*.py'
 
 printf 'Linux operator script tests passed.\n'

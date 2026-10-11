@@ -1,0 +1,9 @@
+services:
+  plane-mq:
+    # Explicitly select the bridge or final version; never skip the bridge.
+    image: rabbitmq:${PLANE_RABBITMQ_TARGET_VERSION:?Select 4.2.9-management-alpine then 4.3.6-management-alpine}
+    hostname: ${PLANE_RABBITMQ_HOSTNAME:?Preserve the observed existing hostname}
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Preserve the existing broker user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Preserve the existing broker password}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:?Preserve the existing broker vhost}

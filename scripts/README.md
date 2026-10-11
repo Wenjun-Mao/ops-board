@@ -4,7 +4,11 @@ These scripts are repo-level helpers for local operations. Run them from any wor
 
 Linux is the default operator path. The old `*.ps1` scripts remain for compatibility during the transition, but use the `*.sh` scripts for normal deployment and HP-15 validation.
 
-All stack-aware scripts look for root `compose.yaml` when `--stack ops-board` is used. `ops-board` is the default. Individual stack names still resolve to `stacks/<stack>/compose.yaml` for isolated maintenance.
+Maintenance scripts default to `--context root`: `--stack plane`, for example,
+selects Plane services in the existing `ops-board` project, not another Compose
+project. Intentionally standalone installations require `--context standalone`.
+See [maintenance and recovery](maintenance/README.md) for identity guards, scoped
+runtime backups, fresh isolated restores, and remaining live acceptance gates.
 
 Use the Tailscale/MagicDNS hostname in `.env` for browser-facing URLs. On `HP-15`, that means URLs such as `http://hp-15:3000` and `http://hp-15:8080`. Use `localhost` only from a shell or browser running directly on the deployment host.
 
@@ -94,13 +98,14 @@ Shows Docker Compose status for one stack. It includes completed one-shot servic
 ./scripts/status.sh
 ```
 
-Use `--stack` for isolated stack maintenance:
+Use `--stack` for a service group in the root deployment:
 
 ```bash
 ./scripts/status.sh --stack uptime-kuma
 ```
 
-The script includes the root `.env` file automatically when it exists. It also includes stack-local env files when present:
+Root Compose includes its own stack-local environment files. Only explicit
+standalone context selects `stacks/<stack>/compose.yaml` and overlays:
 
 - `stacks/<stack>/.env`
 - `stacks/<stack>/<stack>.env`
@@ -117,21 +122,18 @@ Common stack names:
 
 ## update-stack.sh
 
-Pulls images for a stack and runs `docker compose up -d`. It defaults to the root Ops Board aggregator:
+Pulls scoped long-running images and retains existing containers with
+`up --no-deps --no-recreate --pull never`. It refuses changed image IDs, stopped
+writers, and active/failed migration jobs. It is not an upgrade/migration runner,
+and applies no pending container configuration changes. Defaults to root context:
 
 ```bash
 ./scripts/update-stack.sh
 ```
 
-Use `--remove-orphans` only when you deliberately want Compose to remove containers that are no longer present in the compose file:
-
-```bash
-./scripts/update-stack.sh --stack signoz --remove-orphans
-```
-
-For stateful stacks, check the stack README before using this during a version upgrade.
-
-The script includes the root `.env` file first, then stack-local env files when present. Stack-local values override root defaults.
+`--remove-orphans` is no longer supported. For an actual release or schema
+transition, use the reviewed maintenance plan and its checkpoint/migration gates.
+No generic command is allowed to blindly resume writers after migration failure.
 
 Update a specific stack:
 
@@ -143,6 +145,20 @@ Update a specific stack:
 ```
 
 ## backup.ps1
+
+For Linux secret-bearing **runtime state**, use `backup-stack.sh` and
+`restore-stack.sh`, not these configuration-only PowerShell archives. See the
+[cold checkpoint and isolated restore workflow](maintenance/README.md).
+`verify-stack.sh` is the passive readiness alternative to `smoke-day1.sh`.
+
+For an already-applied reviewed Plane/SigNoz stage in root context, pass every
+current layer, in order, as repeatable `--compose-overlay FILE` to status,
+verify, backup or generic update. Baseline checkpoints use no layers. Inputs
+are restricted to that stack's `maintenance/` directory; other contexts and
+restore refuse them. Overlay dry-runs render/validate source with Compose only,
+not the daemon; raw-layer validation additionally requires PyYAML in the operator's
+Python runtime and fails closed if missing. See the foundation workflow for protected scope/mount/resource
+contracts and matched archived-layer restoration; update still cannot apply a stage.
 
 Creates a timestamped zip containing non-secret Ops Board config and docs:
 

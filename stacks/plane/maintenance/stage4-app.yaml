@@ -1,0 +1,42 @@
+# Adapted from the official v1.4.2 release asset; dependencies stay at baseline.
+x-required-app-env: &required-app-env
+  SECRET_KEY: ${SECRET_KEY:?Preserve the existing Plane secret}
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY:?Preserve the existing live secret}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Preserve the existing database password}
+  DATABASE_URL: ${DATABASE_URL:?Preserve the existing database URL}
+  AMQP_URL: ${AMQP_URL:?Preserve the existing broker URL}
+  MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:?Preserve the existing storage user}
+  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:?Preserve the existing storage password}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Preserve the existing storage user}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Preserve the existing storage password}
+  AUTHENTICATION_RATE_LIMIT: ${AUTHENTICATION_RATE_LIMIT:-10/minute}
+
+services:
+  web:
+    image: makeplane/plane-frontend:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+  space:
+    image: makeplane/plane-space:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+  admin:
+    image: makeplane/plane-admin:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+  live:
+    image: makeplane/plane-live:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+    environment:
+      LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY:?Preserve the existing live secret}
+  api:
+    image: makeplane/plane-backend:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+    environment: *required-app-env
+  worker:
+    image: makeplane/plane-backend:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+    environment: *required-app-env
+  beat-worker:
+    image: makeplane/plane-backend:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+    environment: *required-app-env
+  migrator:
+    image: makeplane/plane-backend:${PLANE_APP_TARGET_RELEASE:-v1.4.2}
+    environment: *required-app-env
+    profiles: [manual-jobs]
+    deploy:
+      restart_policy:
+        condition: none
+  proxy:
+    image: makeplane/plane-proxy:${PLANE_APP_TARGET_RELEASE:-v1.4.2}

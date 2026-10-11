@@ -1,0 +1,15 @@
+services:
+  signoz:
+    image: signoz/signoz:v0.143.0
+    environment:
+      SIGNOZ_TOKENIZER_PROVIDER: jwt
+  otel-collector:
+    image: signoz/signoz-otel-collector:v0.144.11
+    volumes:
+      - ./stacks/signoz/maintenance/collector-v0.144.6-plus.yaml:/etc/otel-collector-config.yaml:ro
+  signoz-telemetrystore-migrator:
+    image: signoz/signoz-otel-collector:v0.144.11
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.12.5
+  init-clickhouse:
+    image: clickhouse/clickhouse-server:25.12.5

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/ops-board.sh
@@ -115,7 +116,7 @@ ops_set_env_value "$env_file" "OPS_BOARD_BACKUP_ROOT" "$HOME/ops-board-backups"
 ops_set_env_value "$env_file" "SIGNOZ_PUBLIC_URL" "http://$host_name:8080"
 ops_set_env_value "$env_file" "UPTIME_KUMA_PUBLIC_URL" "http://$host_name:3001"
 ops_set_env_value "$env_file" "HOMEPAGE_PUBLIC_URL" "http://$host_name:3000"
-ops_set_env_value "$env_file" "HOMEPAGE_ALLOWED_HOSTS" "localhost:3000,127.0.0.1:3000,$host_name:3000"
+ops_set_env_value "$env_file" "HOMEPAGE_ALLOWED_HOSTS" "localhost:3000,127.0.0.1:3000,$host_name:3000,host.docker.internal:3000"
 ops_set_env_value "$env_file" "PLANE_PUBLIC_URL" "http://$host_name:8082"
 ops_set_env_value "$env_file" "PLANE_WEB_URL" "http://$host_name:8082"
 
@@ -132,7 +133,6 @@ else
   rabbitmq_password_encoded="$(ops_urlencode "$rabbitmq_password")"
 
   ops_set_env_value "$plane_env_file" "APP_DOMAIN" "$host_name"
-  ops_set_env_value "$plane_env_file" "APP_RELEASE" "v1.3.1"
   ops_set_env_value "$plane_env_file" "LISTEN_HTTP_PORT" "8082"
   ops_set_env_value "$plane_env_file" "LISTEN_HTTPS_PORT" "8443"
   ops_set_env_value "$plane_env_file" "WEB_URL" "http://$host_name:8082"

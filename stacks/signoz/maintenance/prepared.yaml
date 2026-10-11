@@ -1,0 +1,38 @@
+# Root-project overlay only. Apply with exactly one stop layer, never alone.
+services:
+  init-clickhouse:
+    profiles: [manual-jobs]
+    restart: "no"
+  clickhouse:
+    volumes:
+      - ./stacks/signoz/maintenance/metric-log-merges.xml:/etc/clickhouse-server/config.d/metric-log-merges.xml:ro
+    # The operator proves init completion before starting storage explicitly.
+    depends_on: !override
+      zookeeper-1:
+        condition: service_healthy
+  zookeeper-1:
+    image: signoz/zookeeper:3.7.1
+  signoz:
+    profiles: [manual-writers]
+    environment:
+      SIGNOZ_SQLSTORE_PROVIDER: sqlite
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: clickhouse
+  otel-collector:
+    profiles: [manual-writers]
+    command:
+      - /signoz-otel-collector
+      - --config=/etc/otel-collector-config.yaml
+      - --manager-config=/etc/opamp-config.yaml
+      - --copy-path=/var/tmp/collector-config.yaml
+    volumes:
+      - ./stacks/signoz/maintenance/opamp.yaml:/etc/opamp-config.yaml:ro
+  signoz-telemetrystore-migrator:
+    profiles: [manual-jobs]
+    restart: "no"
+    command:
+      - -c
+      - |
+        /signoz-otel-collector migrate ready &&
+        /signoz-otel-collector migrate bootstrap &&
+        /signoz-otel-collector migrate sync up &&
+        /signoz-otel-collector migrate async up

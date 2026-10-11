@@ -186,7 +186,7 @@ Show Ops Board status:
 ./scripts/status.sh
 ```
 
-Use individual stack names only when intentionally operating a stack outside the root aggregator:
+Select a service group within the root `ops-board` project (the default context):
 
 ```bash
 ./scripts/status.sh --stack signoz
@@ -195,17 +195,18 @@ Use individual stack names only when intentionally operating a stack outside the
 ./scripts/status.sh --stack plane
 ```
 
-Update Ops Board:
+For intentionally standalone installations, add `--context standalone` and a named
+stack. Never use that context to maintain HP-15's aggregated deployment.
+
+Generic pull/check (retains existing containers; not a release migration):
 
 ```bash
 ./scripts/update-stack.sh
 ```
 
-Remove orphaned containers during an update only when you intentionally want cleanup:
-
-```bash
-./scripts/update-stack.sh --remove-orphans
-```
+Changed images or stopped writers are refused; `--remove-orphans` is unsupported.
+For scoped cold backups, fresh isolated restores, passive readiness and reviewed
+release stages, see [maintenance and recovery](scripts/maintenance/README.md).
 
 Stop Ops Board while preserving volumes:
 

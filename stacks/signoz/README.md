@@ -4,6 +4,10 @@ Shared SigNoz observability stack for centralized logs, traces, metrics, and OTL
 
 ## Quick Start
 
+These standalone commands are for a fresh `signoz` project. HP-15 already uses
+root project `ops-board`: do not apply standalone commands to that deployment.
+Use the gated [maintenance workflow](maintenance/README.md) for existing state.
+
 From the repo root:
 
 ```bash
@@ -44,12 +48,35 @@ The one-shot services exit with code `0` after setup. Use `./scripts/status.sh -
 
 | Component | Image |
 |-----------|-------|
-| SigNoz | `signoz/signoz:v0.125.1` |
-| SigNoz OTel Collector | `signoz/signoz-otel-collector:v0.144.4` |
-| ClickHouse | `clickhouse/clickhouse-server:25.5.6` |
+| SigNoz | `signoz/signoz:v0.145.0` |
+| SigNoz OTel Collector / Migrator | `signoz/signoz-otel-collector:v0.144.12` |
+| ClickHouse / Init | `clickhouse/clickhouse-server:25.12.5` (observed 25.12.5.44) |
 | ZooKeeper | `signoz/zookeeper:3.7.1` |
 
-ClickHouse stays at `25.5.6` because that is the version currently pinned by the upstream SigNoz Docker Compose layout.
+These are the accepted HP-15 deployment and repository defaults, not floating
+upstream versions. The ordered four-stop rollout preserved the existing stores
+and credentials; see the [live receipt](../../docs/monitoring/maintenance-receipts/2026-10-10-signoz-live.md).
+Official bundled Compose was deprecated in v0.130. Paired collector/OpAMP
+configuration and gated existing-state upgrades are documented in
+[maintenance/README.md](maintenance/README.md). Rendering alone proves no upgrade.
+
+## Lifecycle Contract
+
+The owned read-only collector launcher preserves `migrate sync check`, then
+execs the actual collector as PID 1. It forwards TERM/INT only to its initializer
+child during that check, reaps it and bounds cancellation; forced KILL is still
+exit 137 and an unclean refusal. The server launcher requires a readable,
+nonempty existing JWT Docker secret before exec; it never prints the value or
+rotates credentials. The active collector uses the paired maintenance YAML and
+OpAMP manager configuration. The original `otel-collector-config.yaml` is retained
+byte-for-byte as historical baseline evidence; it is no longer the active bind.
+
+The HP-15 launcher installation and readiness-qualified ordinary stop, restart
+and cold-restore gates have passed. Its temporary old-child signaling mitigation
+is retired; the [installation record](maintenance/README.md#baseline-launcher-installation-gate)
+must not become the backup path. Long-running services use `unless-stopped`;
+one-shot jobs never retry automatically. Fresh startup retains the normal
+dependency graph; existing-state maintenance uses explicit gated manual phases.
 
 ## Published Ports
 
@@ -99,6 +126,8 @@ Use the canonical onboarding docs:
 - [Codex guide](../../docs/onboarding/codex-guide.md)
 
 ## Stop And Reset
+
+Standalone project only; not the root-project maintenance or backup workflow.
 
 Stop while keeping data:
 

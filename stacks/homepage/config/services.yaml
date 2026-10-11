@@ -12,7 +12,7 @@
     - SigNoz:
         href: "{{HOMEPAGE_VAR_SIGNOZ_URL}}"
         description: Logs, traces, metrics, and OTLP ingestion
-        ping: "{{HOMEPAGE_VAR_SIGNOZ_URL}}/api/v1/health"
+        ping: "{{HOMEPAGE_VAR_SIGNOZ_INTERNAL_URL}}/api/v1/health"
 
 - Project Management:
     - Plane:

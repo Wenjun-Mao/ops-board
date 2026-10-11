@@ -31,7 +31,7 @@ x-common: &common
       max-file: "3"
 x-clickhouse-defaults: &clickhouse-defaults
   !!merge <<: *common
-  image: clickhouse/clickhouse-server:25.5.6
+  image: clickhouse/clickhouse-server:25.12.5
   tty: true
   labels:
     signoz.io/scrape: "true"
@@ -82,7 +82,7 @@ x-db-depend: &db-depend
 services:
   init-clickhouse:
     !!merge <<: *common
-    image: clickhouse/clickhouse-server:25.5.6
+    image: clickhouse/clickhouse-server:25.12.5
     container_name: signoz-init-clickhouse
     environment:
       - HISTOGRAM_QUANTILE_URL=${HISTOGRAM_QUANTILE_URL:-}
@@ -108,7 +108,7 @@ services:
         fi
         tar -xvzf histogram-quantile.tar.gz
         install -m 0755 histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
-    restart: on-failure
+    restart: "no"
     volumes:
       - ./common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
   zookeeper-1:
@@ -139,12 +139,13 @@ services:
       - ./common/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - ./common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ./common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
+      - ./maintenance/metric-log-merges.xml:/etc/clickhouse-server/config.d/metric-log-merges.xml:ro
       - clickhouse:/var/lib/clickhouse/
       # Optional user-created storage policy:
       # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   signoz:
     !!merge <<: *db-depend
-    image: signoz/signoz:${SIGNOZ_VERSION:-v0.125.1}
+    image: signoz/signoz:${SIGNOZ_VERSION:-v0.145.0}
     container_name: signoz
     ports:
       - "0.0.0.0:${SIGNOZ_HTTP_PORT:-8080}:8080"   # UI - reachable from LAN / Tailscale
@@ -152,14 +153,18 @@ services:
       - signoz_jwt_secret
     volumes:
       - sqlite:/var/lib/signoz/
+      - ./lifecycle/launch-server.sh:/opt/signoz/lifecycle/launch-server.sh:ro
     entrypoint:
       - /bin/sh
-      - -c
-      - |
-        export SIGNOZ_TOKENIZER_JWT_SECRET="$$(cat /run/secrets/signoz_jwt_secret)"
-        exec ./signoz server
+      - /opt/signoz/lifecycle/launch-server.sh
+      - /run/secrets/signoz_jwt_secret
+      - ./signoz
+      - server
     environment:
       - SIGNOZ_ALERTMANAGER_PROVIDER=signoz
+      - SIGNOZ_TOKENIZER_PROVIDER=jwt
+      - SIGNOZ_SQLSTORE_PROVIDER=sqlite
+      - SIGNOZ_TELEMETRYSTORE_PROVIDER=clickhouse
       - SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
       - SIGNOZ_SQLSTORE_SQLITE_PATH=/var/lib/signoz/signoz.db
     healthcheck:
@@ -174,17 +179,20 @@ services:
       retries: 3
   otel-collector:
     !!merge <<: *db-depend
-    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.4}
+    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.12}
     container_name: signoz-otel-collector
     entrypoint:
       - /bin/sh
+      - /opt/signoz/lifecycle/launch-collector.sh
     command:
-      - -c
-      - |
-        /signoz-otel-collector migrate sync check &&
-        /signoz-otel-collector --config=/etc/otel-collector-config.yaml
+      - /signoz-otel-collector
+      - --config=/etc/otel-collector-config.yaml
+      - --manager-config=/etc/opamp-config.yaml
+      - --copy-path=/var/tmp/collector-config.yaml
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./maintenance/collector-v0.144.6-plus.yaml:/etc/otel-collector-config.yaml:ro
+      - ./maintenance/opamp.yaml:/etc/opamp-config.yaml:ro
+      - ./lifecycle/launch-collector.sh:/opt/signoz/lifecycle/launch-collector.sh:ro
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
@@ -199,7 +207,7 @@ services:
       - "0.0.0.0:${SIGNOZ_COLLECTOR_HEALTH_PORT:-13133}:13133" # collector health probe
   signoz-telemetrystore-migrator:
     !!merge <<: *db-depend
-    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.4}
+    image: signoz/signoz-otel-collector:${SIGNOZ_OTELCOL_TAG:-v0.144.12}
     container_name: signoz-telemetrystore-migrator
     environment:
       - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
@@ -211,10 +219,11 @@ services:
     command:
       - -c
       - |
+        /signoz-otel-collector migrate ready &&
         /signoz-otel-collector migrate bootstrap &&
         /signoz-otel-collector migrate sync up &&
         /signoz-otel-collector migrate async up
-    restart: on-failure
+    restart: "no"
 networks:
   signoz-net:
     name: signoz-net

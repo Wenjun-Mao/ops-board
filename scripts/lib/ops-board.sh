@@ -56,30 +56,5 @@ path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
 }
 
-ops_build_compose_args() {
-  local repo_root="$1"
-  local stack="$2"
-  OPS_COMPOSE_ARGS=(compose)
-
-  local root_env="$repo_root/.env"
-  if [[ -f "$root_env" ]]; then
-    OPS_COMPOSE_ARGS+=(--env-file "$root_env")
-  fi
-
-  local compose_file
-  if [[ "$stack" == "ops-board" ]]; then
-    compose_file="$repo_root/compose.yaml"
-  else
-    compose_file="$repo_root/stacks/$stack/compose.yaml"
-    local stack_dir="$repo_root/stacks/$stack"
-    local stack_env
-    for stack_env in "$stack_dir/.env" "$stack_dir/$stack.env"; do
-      if [[ -f "$stack_env" ]]; then
-        OPS_COMPOSE_ARGS+=(--env-file "$stack_env")
-      fi
-    done
-  fi
-
-  [[ -f "$compose_file" ]] || ops_die "Compose file not found for stack '$stack': $compose_file"
-  OPS_COMPOSE_ARGS+=(-f "$compose_file")
-}
+# Deployment identity lives in maintenance/deployment.py. Keep shell helpers here
+# limited to setup; a stack name alone must not silently switch Compose projects.

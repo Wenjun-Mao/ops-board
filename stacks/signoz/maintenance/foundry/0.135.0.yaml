@@ -1,0 +1,30 @@
+# Render-only upstream comparison input; never cast this installation.
+apiVersion: v1alpha1
+kind: Installation
+metadata:
+  name: signoz
+spec:
+  deployment:
+    flavor: compose
+    mode: docker
+  signoz:
+    spec:
+      image: signoz/signoz:v0.135.0
+  ingester:
+    spec:
+      image: signoz/signoz-otel-collector:v0.144.6
+  metastore:
+    kind: sqlite
+  telemetrykeeper:
+    kind: zookeeper
+    spec:
+      image: signoz/zookeeper:3.7.1
+  telemetrystore:
+    spec:
+      image: clickhouse/clickhouse-server:25.12.5
+      config:
+        data:
+          config-0-0.yaml: |
+            macros:
+              replica: "example01-01-1"
+              shard: "01"

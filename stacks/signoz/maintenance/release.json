@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "status": "live-verified",
+  "project": "ops-board",
+  "deployment": {
+    "host": "hp-15",
+    "stage": "0.145.0",
+    "clickhouse_observed": "25.12.5.44",
+    "receipt": "docs/monitoring/maintenance-receipts/2026-10-10-signoz-live.md"
+  },
+  "common_overlay": "prepared.yaml",
+  "baseline": {
+    "app": "v0.125.1",
+    "collector": "v0.144.4",
+    "clickhouse_image": "25.5.6",
+    "clickhouse_observed": "25.5.6.14",
+    "zookeeper": "3.7.1",
+    "collector_config_sha256": "87356181e34a358f6a251161df5bed30259eb7bc725700526b36ed376b84b341"
+  },
+  "foundry": {
+    "version": "v0.3.0",
+    "source_commit": "78c6968a8137341a4be15d8931e2dd796c2a879c",
+    "operation": "forge-only --no-ledger --no-updater",
+    "archive_sha256": {
+      "darwin_arm64": "2b3e8d7324044ff49cda9774d120bdb03558cff7b82142f2073153fdaeddf0ec",
+      "linux_amd64": "7555f91ee87a9d0d517009fc859ef64be76ad8b045446b2fe4360b896dc5838d"
+    },
+    "templates": [
+      {
+        "path": "internal/casting/dockercomposecasting/templates/compose.yaml.gotmpl",
+        "sha256": "c9334be0f4e5a098e7d8f7b38f3e7fb8ef0ca28dbab6e39fac35a44c8749a5af"
+      },
+      {
+        "path": "internal/molding/ingestermolding/templates/config.v0129x.yaml.gotmpl",
+        "sha256": "dca96cd45fed6412b1edc4383451716e0194b59b8519c7b22b6d06e64dbaee24"
+      },
+      {
+        "path": "internal/molding/ingestermolding/templates/config.v01446.yaml.gotmpl",
+        "sha256": "81d3e94ca1d08ed112067a9382d22cd6eef2f67fa9380d961cf95741f76b27e0"
+      },
+      {
+        "path": "internal/molding/ingestermolding/templates/opamp.v0129x.yaml.gotmpl",
+        "sha256": "14c278f294f9ab3665deea5fe836863a038a0f0c0e9961967fd298a15dbcc296"
+      }
+    ]
+  },
+  "sources": {
+    "required_stops": "https://signoz.io/upgrade-path/",
+    "legacy_layout": "https://github.com/SigNoz/signoz/blob/main/deploy/MIGRATION.md",
+    "first_stop": "https://signoz.io/docs/operate/migration/upgrade-0-131/",
+    "first_pair": "https://github.com/SigNoz/charts/blob/signoz-0.131.0/charts/signoz/values.yaml",
+    "dashboards": "https://signoz.io/docs/operate/migration/upgrade-0-135/",
+    "jwt_and_ai": "https://signoz.io/docs/operate/migration/upgrade-0-143/",
+    "final_pair": "https://github.com/SigNoz/charts/blob/signoz-0.145.0/charts/signoz/values.yaml"
+  },
+  "storage_contract": {
+    "metastore": "existing SQLite /var/lib/signoz/signoz.db",
+    "coordinator": "existing signoz/zookeeper:3.7.1, root-owned /bitnami/zookeeper",
+    "named_volumes": ["signoz-sqlite", "signoz-clickhouse", "signoz-zookeeper-1"],
+    "xml": "existing common/clickhouse XML, cluster=cluster, shard=01, replica=example01-01-1",
+    "compatibility": "official migration casting supports sqlite+zookeeper; explicit v0.3.0 forge pairs; runtime restore remains mandatory"
+  },
+  "stages": [
+    {
+      "id": "0.131.1",
+      "predecessor": "0.125.1",
+      "overlay": "stop-0.131.1.yaml",
+      "casting": "foundry/0.131.1.yaml",
+      "app": "v0.131.1",
+      "collector": "v0.144.5",
+      "clickhouse": "25.12.5",
+      "config": "collector-v0.144.5.yaml",
+      "vendor_template": "config.v0129x.yaml.gotmpl",
+      "gate": "baseline ordinary Docker stop and full cold restore; ClickHouse 25.12.5 before schema migration"
+    },
+    {
+      "id": "0.135.0",
+      "predecessor": "0.131.1",
+      "overlay": "stop-0.135.0.yaml",
+      "casting": "foundry/0.135.0.yaml",
+      "app": "v0.135.0",
+      "collector": "v0.144.6",
+      "clickhouse": "25.12.5",
+      "config": "collector-v0.144.6-plus.yaml",
+      "vendor_template": "config.v01446.yaml.gotmpl",
+      "gate": "accepted first stop and full cold restore; dashboard V2/Perses/scalar reduceTo checks"
+    },
+    {
+      "id": "0.143.0",
+      "predecessor": "0.135.0",
+      "overlay": "stop-0.143.0.yaml",
+      "casting": "foundry/0.143.0.yaml",
+      "app": "v0.143.0",
+      "collector": "v0.144.11",
+      "clickhouse": "25.12.5",
+      "config": "collector-v0.144.6-plus.yaml",
+      "vendor_template": "config.v01446.yaml.gotmpl",
+      "gate": "accepted dashboard stop and full cold restore; explicit JWT/existing users; AI OpAMP checks"
+    },
+    {
+      "id": "0.145.0",
+      "predecessor": "0.143.0",
+      "overlay": "stop-0.145.0.yaml",
+      "casting": "foundry/0.145.0.yaml",
+      "app": "v0.145.0",
+      "collector": "v0.144.12",
+      "clickhouse": "25.12.5",
+      "config": "collector-v0.144.6-plus.yaml",
+      "vendor_template": "config.v01446.yaml.gotmpl",
+      "gate": "accepted JWT/AI stop and full cold restore; final ingestion and historical data checks"
+    }
+  ]
+}
