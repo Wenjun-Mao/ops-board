@@ -137,6 +137,17 @@ into isolated resources, then review any live recovery and subsequent-write loss
 
 - `stage3-db.yaml`: PostgreSQL **15.19-alpine**, same major 15. Review every patch
   note since 15.7, index/collation follow-ups, and test copied data before live.
+- Pinned container images can change ICU/libc behavior even within one database
+  major. Audit actual collation versions, database defaults, dependencies, columns
+  and indexes before proceeding. A mismatch fails the stage until its required
+  rebuild or explicitly proved unused-metadata repair is complete; version refresh
+  alone is not index repair. Retain complete before/after catalog proof and recheck
+  after restart and cold restoration. See the
+  [database-only kickoff](../../../docs/monitoring/maintenance-receipts/2026-10-11-plane-postgresql.md)
+  and [PostgreSQL's guidance](https://www.postgresql.org/docs/15/sql-altercollation.html).
+  Its unused-collation finding is not a waiver for a different/live catalog.
+  A null libc version is not proof of unchanged sorting; application ordering
+  behavior still needs verification.
 - Quiesce/checkpoint; select only DB, then verify readiness and required repairs:
   `"${stage[@]}" up -d --no-deps --pull never plane-db`.
 - Explicitly start required unchanged infrastructure and the prior app cohort,

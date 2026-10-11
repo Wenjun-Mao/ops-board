@@ -6,6 +6,10 @@ live stops through v0.145.0 passed restart, cold recovery, native preservation a
 existing-session browser checks. Normal-source/ignored-env convergence passed; see the
 [live receipt](../../monitoring/maintenance-receipts/2026-10-10-signoz-live.md).
 Plane remains gated by restored upload/application acceptance.
+The isolated PostgreSQL 15.19 database-only kickoff passed preservation, an
+inspected unused-ICU metadata refresh, restart and its own cold restore; complete
+Plane-on-patched-DB behavior remains pending. See the
+[Plane kickoff receipt](../../monitoring/maintenance-receipts/2026-10-11-plane-postgresql.md).
 Tooling is deployed; copied Rabbit/Silo feasibility passed without
 production version changes. See [execution receipts](../../monitoring/maintenance-receipts/2026-10-07.md).
 Research date: 2026-10-07, America/Toronto. HP-15 observations span October 7-8 UTC.
@@ -232,8 +236,12 @@ pins and live pins converge at completion, not through an unscoped `up` mid-plan
 
 Files: Plane Compose/version settings and stage verification/recovery helpers.
 
-- [ ] Review all PostgreSQL 15 patch notes since 15.7 for required follow-ups such
-  as index repair. Rehearse the target with copied data before the live patch.
+- [x] Review all PostgreSQL 15 patch notes since 15.7 for required follow-ups such
+  as index repair. Database-only 15.19 copied-data preservation, unused-ICU
+  metadata repair, restart and own cold recovery passed; see the
+  [scoped receipt](../../monitoring/maintenance-receipts/2026-10-11-plane-postgresql.md).
+- [ ] Verify the complete restored Plane family on the patched database and its
+  own full-family recovery. Database-only acceptance does not satisfy this gate.
 - [ ] Quiesce Plane writers, checkpoint, upgrade PostgreSQL within major 15, run
   required follow-ups, and verify login, workspace data, and application queries.
 - [ ] In a separate checkpointed change, patch Valkey within 7.2. Preserve sessions
